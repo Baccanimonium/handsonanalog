@@ -1,14 +1,42 @@
 <template>
   <div id="app">
-    <div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
-    </div>
-    <router-view/>
+    <Table
+      :columns="columns"
+      :data="data"
+      table-name="asd"
+    />
   </div>
 </template>
 
+<script>
+import Table from './Table'
+export default {
+  name: 'APP',
+  components: {
+    Table
+  },
+  data () {
+    return {
+      columns: [
+        { source: 'id', label: 'ID' },
+        { source: 'name.first', label: 'FirstName' },
+        { source: 'name.last', label: 'SecondName' },
+        { source: 'address', label: 'Адресс' }
+      ],
+      data: [
+        { id: 1, name: { first: 'Ted', last: 'Right' }, address: '' },
+        { id: 2, address: '' }, // HOT will create missing properties on demand
+        { id: 3, name: { first: 'Joan', last: 'Well' }, address: '' }
+      ]
+    }
+  },
+}
+</script>
+
 <style lang="scss">
+  html, body, #app {
+    height: 100%;
+  }
 #app {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
