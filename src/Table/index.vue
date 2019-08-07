@@ -127,7 +127,7 @@ export default {
             break
           case 'ArrowRight':
             if (this.columns.length - 1 > index) {
-              this.coords = [rowIndex, index + 1, rowIndex, index +1]
+              this.coords = [rowIndex, index + 1, rowIndex, index + 1]
             }
             break
           case 'ArrowLeft':

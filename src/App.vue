@@ -4,14 +4,12 @@
       :columns="columns"
       :data="data"
       table-name="asd"
-
     />
-
   </div>
 </template>
 
 <script>
-import Table from './Table'
+import Table from './Table/index'
 export default {
   name: 'APP',
   components: {
