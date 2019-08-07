@@ -86,27 +86,56 @@ export default {
       }
     },
 
-    closeNewDocumentList ({ key }) {
-      const [rowIndex, index] = this.coords
-      switch (key) {
-        case 'ArrowUp':
-          if (rowIndex > 0) {
-            this.coords = [rowIndex - 1, index, rowIndex - 1, index]
-          }
-          break
-        case 'ArrowDown':
-          if (this.data.length - 1 > rowIndex) {
-            this.coords = [rowIndex + 1, index, rowIndex + 1, index]
-          }
-          break
-        case 'ArrowRight':
-          if (this.columns.length - 1 > index) {
-            this.coords = [rowIndex, index + 1, rowIndex + 1, index]
-          }
-          break
-        case 'ArrowLeft':
-          if (index > 0) { this.coords = [rowIndex, index - 1, rowIndex - 1, index] }
-          break
+    closeNewDocumentList (a) {
+      const { key, altKey, ctrlKey, shiftKey } = a
+      console.log(altKey, ctrlKey, shiftKey)
+      const [rowIndex, index, endRowIndex, endIndex] = this.coords
+      if (shiftKey) {
+        switch (key) {
+          case 'ArrowUp':
+            if (endRowIndex > 0) {
+              this.coords = [rowIndex, index, endRowIndex - 1, endIndex]
+            }
+            break
+          case 'ArrowDown':
+            if (this.data.length - 1 > endRowIndex) {
+              this.coords = [rowIndex, index, endRowIndex + 1, endIndex]
+            }
+            break
+          case 'ArrowRight':
+            if (this.columns.length - 1 > endIndex) {
+              this.coords = [rowIndex, index, endRowIndex, endIndex + 1]
+            }
+            break
+          case 'ArrowLeft':
+            if (endIndex > 0) {
+              this.coords = [rowIndex, index, endRowIndex, endIndex - 1]
+            }
+            break
+        }
+      } else {
+        switch (key) {
+          case 'ArrowUp':
+            if (rowIndex > 0) {
+              this.coords = [rowIndex - 1, index, rowIndex - 1, index]
+            }
+            break
+          case 'ArrowDown':
+            if (this.data.length - 1 > rowIndex) {
+              this.coords = [rowIndex + 1, index, rowIndex + 1, index]
+            }
+            break
+          case 'ArrowRight':
+            if (this.columns.length - 1 > index) {
+              this.coords = [rowIndex, index + 1, rowIndex, index +1]
+            }
+            break
+          case 'ArrowLeft':
+            if (index > 0) {
+              this.coords = [rowIndex, index - 1, rowIndex, index - 1]
+            }
+            break
+        }
       }
     }
   },
