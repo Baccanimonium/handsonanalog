@@ -6,7 +6,6 @@
   >
     <div
       :style="hightLighterStyles.item"
-      style="background-color: red"
       class="hightLighterItem"
     />
   </div>
@@ -45,16 +44,15 @@ export default {
       const { clientHeight, children: ItemRowChildren, offsetTop: itemOffsetTop } = children[rowIndex + 2]
       const { clientWidth, offsetLeft: itemOffsetLeft, } = ItemRowChildren[index]
       return {
-        area: { height: `${height}px`,
-        // width: `${clientWidth}px`,
-          width: `${width + 2}px`,
-          top: `${offsetTop}px`,
-          left: `${offsetLeft}px` },
+        area: { height: `${height - 1}px`,
+          width: `${width + 1}px`,
+          top: `${offsetTop - 1}px`,
+          left: `${offsetLeft - 1}px` },
         item: {
-          height: `${clientHeight + 1}px`,
-          width: `${clientWidth + 1}px`,
-          top: `${itemOffsetTop - offsetTop - 3}px`,
-          left: `${itemOffsetLeft - offsetLeft - 3}px` },
+          height: `${clientHeight - 1}px`,
+          width: `${clientWidth}px`,
+          top: `${itemOffsetTop - offsetTop - 2}px`,
+          left: `${itemOffsetLeft - offsetLeft - 2}px` },
       }
     },
   },
@@ -63,16 +61,16 @@ export default {
 
 <style scoped>
   .hightLighter {
-    border: solid;
-    border-color: #7bc7ff;
-    /*background-color: #7bc7ff;*/
-    /*opacity: .3;*/
+    z-index: -1;
+    border: 2px solid #7bc7ff;
     position: absolute;
   }
 
   .hightLighterItem {
+    z-index: 2;
     position: absolute;
-    background-color: #7bc7ff;
+    border: 3px solid #7bc7ff;
+    background-color: #e6e6e6;
   }
 
 </style>

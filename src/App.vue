@@ -1,8 +1,8 @@
 <template>
   <div id="app">
     <Table
+      v-model="data"
       :columns="columns"
-      :data="data"
       table-name="asd"
     />
   </div>

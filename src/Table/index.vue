@@ -1,5 +1,7 @@
 <script>
-import { get } from './utils'
+import { get, set } from './utils'
+import { PureArraySlice } from './utils/pureArrayMethods'
+import copy from './utils/copy'
 import Row from './row'
 import Header from './header'
 import HightLighter from './HightLighter'
@@ -17,7 +19,7 @@ export default {
       type: Array,
       default: () => []
     },
-    data: {
+    value: {
       type: Array,
       default: () => []
     },
@@ -34,10 +36,10 @@ export default {
       return { gridTemplateColumns: `repeat(${this.columns.length}, minmax(150px, 1fr)` }
     },
     normalizedData () {
-      const { data, sort: { source, direction } = {} } = this
-      if (!source) return data
+      const { value, sort: { source, direction } = {} } = this
+      if (!source) return value
       const normalizedDiretion = direction === ASC ? -1 : 1
-      const newArray = Array.from(data)
+      const newArray = Array.from(value)
       return newArray.sort((first, second) => {
         const nFirst = get(source, first)
         const nSecond = get(source, second)
@@ -54,17 +56,22 @@ export default {
   },
   beforeMount () {
     document.addEventListener('keyup', this.closeNewDocumentList)
+    document.addEventListener('paste', this.handlePaste)
   },
   beforeDestroy () {
     document.removeEventListener('keyup', this.closeNewDocumentList)
+    document.removeEventListener('paste', this.handlePaste)
   },
   methods: {
     handleonMousedown (coords) {
       this.activeSelection = true
+      document.addEventListener('mouseup', this.handleonMouseup)
+
       this.coords = [...coords, ...coords]
     },
     handleonMouseup () {
       this.activeSelection = false
+      document.removeEventListener('mouseup', this.handleonMouseup)
     },
     handleonMouseover ([endRowIndex, endIndex]) {
       if (this.activeSelection) {
@@ -72,7 +79,50 @@ export default {
         this.coords = [rowIndex, index, endRowIndex, endIndex]
       }
     },
-
+    handlePaste (e) {
+      const [rowIndex, index, endRowIndex, endIndex] = this.coords
+      let pastedText
+      if (window.clipboardData && window.clipboardData.getData) { // IE
+        pastedText = window.clipboardData.getData('Text')
+      } else if (e.clipboardData && e.clipboardData.getData) {
+        pastedText = e.clipboardData.getData('text/plain')
+      }
+      /* нужно сделать вставку в кол-во рядов кратное данным из буфера
+        пример rowIndex-endRowIndex = 16
+        clipData.length = 3
+        значит будет 5 вставок последний ряд не заполнится
+        по факту вставка миниум одна, даже если выделенный рендж мешьне
+     */
+      const data = pastedText.split('&#9').map(i => i.split(','))
+      const dataLength = data[0].length
+      const Strategy = endIndex + 1 - index !== dataLength
+        ? (endIndex + 1 - index) % dataLength === 0
+          ? 'fill'
+          : 'partialInsert'
+        : 'insert'
+      switch (Strategy) {
+        case 'fill':
+          console.log(1)
+          break
+        case 'partialInsert':
+          const newData = (Array.from(this.value))
+          data.forEach((rowValue, clipIndex) => {
+            let i = 0
+            const endI = rowValue.length
+            for (i; i <= endI; i++) {
+              const targetRowIndex = clipIndex + rowIndex
+              if (targetRowIndex > this.value.length) break
+              console.log(this.columns[i + index].source, newData[targetRowIndex], rowValue[i])
+              set(this.columns[i + index].source, newData[targetRowIndex], rowValue[i])
+            }
+          })
+          console.log(newData)
+          this.$emit('input', newData)
+          break
+        case 'insert':
+          console.log(3)
+      }
+    },
     handleSort (sortSource) {
       const { sort: { source, direction } = {} } = this
       if (sortSource === source) { // был ли клик на этот заголовок
@@ -88,7 +138,7 @@ export default {
 
     closeNewDocumentList (a) {
       const { key, altKey, ctrlKey, shiftKey } = a
-      console.log(altKey, ctrlKey, shiftKey)
+
       const [rowIndex, index, endRowIndex, endIndex] = this.coords
       if (shiftKey) {
         switch (key) {
@@ -98,7 +148,7 @@ export default {
             }
             break
           case 'ArrowDown':
-            if (this.data.length - 1 > endRowIndex) {
+            if (this.value.length - 1 > endRowIndex) {
               this.coords = [rowIndex, index, endRowIndex + 1, endIndex]
             }
             break
@@ -113,6 +163,18 @@ export default {
             }
             break
         }
+      } else if (ctrlKey) {
+        switch (key) {
+          case 'c':
+            console.log(11)
+            copy(Array.from(this.normalizedData)
+              .slice(rowIndex, endRowIndex + 1)
+              .map((data) => this.columns
+                .slice(index, endIndex + 1)
+                .map(({ source }) => get(source, data))
+                .toString()
+              ).reduce((acc, item) => `${acc}&#9${item}`))
+        }
       } else {
         switch (key) {
           case 'ArrowUp':
@@ -121,7 +183,7 @@ export default {
             }
             break
           case 'ArrowDown':
-            if (this.data.length - 1 > rowIndex) {
+            if (this.value.length - 1 > rowIndex) {
               this.coords = [rowIndex + 1, index, rowIndex + 1, index]
             }
             break
@@ -170,9 +232,11 @@ export default {
 
 <style lang="scss" scoped>
 .table {
+  position: relative;
   border-top: 1px solid #ccc;
   border-left: 1px solid #ccc;
   z-index: 10;
+  user-select: none;
   /deep/ .th {
     display: grid;
     .td {

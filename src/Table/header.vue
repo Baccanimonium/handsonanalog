@@ -43,5 +43,6 @@ export default {
     text-align: center;
     font-weight: 400;
     white-space: nowrap;
+    position: relative;
   }
 </style>
