@@ -32,6 +32,12 @@ export default {
     rowStyles () {
       return { gridTemplateColumns: `repeat(${this.columns.length}, minmax(150px, 1fr)` }
     },
+    // optimizedData () {
+    //   const _data =new Map()
+    //   this.data.forEach((d, i) => {
+    //
+    //   })
+    // },
     normalizedData () {
       const { data, sort: { source, direction } = {} } = this
       if (!source) return data
@@ -50,6 +56,12 @@ export default {
         return 0
       })
     }
+  },
+  mounted () {
+    window.addEventListener('resize', this.updateSizes)
+  },
+  beforeDestroy () {
+    window.removeEventListener('resize', this.updateSizes)
   },
   methods: {
     handleSelection (coords) {
