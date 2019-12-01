@@ -2,9 +2,11 @@
 import { get, set } from './utils'
 import { PureArraySlice } from './utils/pureArrayMethods'
 import copy from './utils/copy'
+import scrollController from './controllers/scrollController'
 import Row from './row'
 import Header from './header'
 import HightLighter from './HightLighter'
+import Scroll from './Scroll'
 const ASC = 'ASC'
 const DSC = 'DSC'
 
@@ -14,6 +16,7 @@ export default {
     Row,
     Header
   },
+  mixins: [scrollController],
   props: {
     columns: {
       type: Array,
@@ -28,14 +31,14 @@ export default {
     return {
       sort: undefined,
       coords: undefined,
-      activeSelection: false
+      activeSelection: false,
     }
   },
   computed: {
     rowStyles () {
       return { gridTemplateColumns: `repeat(${this.columns.length}, minmax(150px, 1fr)` }
     },
-    normalizedData () {
+    sortedData () {
       const { value, sort: { source, direction } = {} } = this
       if (!source) return value
       const normalizedDiretion = direction === ASC ? -1 : 1
@@ -52,6 +55,9 @@ export default {
         // a должно быть равным b
         return 0
       })
+    },
+    normalizedData () {
+      return this.sortedData.slice(this.startViewedRangeIndex, this.currentScrolledElement + this.renderedElementCount)
     }
   },
   beforeMount () {
@@ -205,24 +211,43 @@ export default {
   render (h) {
     const { normalizedData, columns, rowStyles, $refs: { table } } = this
     return (
-      <div class="table" ref="table">
-        <HightLighter coord={this.coords} tableRef={table} />
-        <Header
-          columns={columns}
-          rowStyles={rowStyles}
-          onSort={this.handleSort}
-        />
-        {normalizedData.map((rowData, index) => (
-          <Row
-            data={rowData}
+      <div class="table" ref="table" onWheel={this.handleScroll}>
+        <div class="table-container">
+          <Header
             columns={columns}
             rowStyles={rowStyles}
-            rowIndex={index}
-            onMousedown={this.handleonMousedown}
-            onMouseup={this.handleonMouseup}
-            onMouseover={this.handleonMouseover}
+            onSort={this.handleSort}
           />
-        ))}
+          <div class="table-body" ref="dataContainer">
+            <div style={this.containerStyles} ref="scrollContainer">
+              {normalizedData.map((rowData, index) => (
+                <Row
+                  key={index + this.startViewedRangeIndex}
+                  data={rowData}
+                  columns={columns}
+                  rowStyles={rowStyles}
+                  rowIndex={index + this.startViewedRangeIndex}
+                  onMousedown={this.handleonMousedown}
+                  onMouseup={this.handleonMouseup}
+                  onMouseover={this.handleonMouseover}
+                  onElementMounted={this.updateElementSizeMeta}
+                  onElementUnMounted={this.removeElementSizeMeta}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+        <HightLighter coord={this.coords} tableRef={table} />
+        {this.isOverflowed && (
+          <Scroll
+            class="table-scroll"
+            value={this.value}
+            currentScroll={this.currentScroll}
+            overflowedContainerHeight={this.overflowedContainerHeight}
+            renderedElementCount={this.renderedElementCount}
+            currentScrolledElement={this.currentScrolledElement}
+          />
+        )}
       </div>
 
     )
@@ -237,23 +262,38 @@ export default {
   border-left: 1px solid #ccc;
   z-index: 10;
   user-select: none;
-  /deep/ .th {
-    display: grid;
-    .td {
-      border-top-width: 0;
-      border-left-width: 0;
-      border-right: 1px solid #ccc;
-      border-bottom: 1px solid #ccc;
-      height: 22px;
-      empty-cells: show;
-      line-height: 21px;
-      padding: 0 4px;
-      vertical-align: top;
+  height: 100%;
+  display: flex;
+  .table-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    .table-body {
+      height: 100%;
       overflow: hidden;
-      outline-width: 0;
-      white-space: pre-line;
-      background-clip: padding-box;
     }
+    /deep/ .th {
+      display: grid;
+      .td {
+        border-top-width: 0;
+        border-left-width: 0;
+        border-right: 1px solid #ccc;
+        border-bottom: 1px solid #ccc;
+        height: 22px;
+        empty-cells: show;
+        line-height: 21px;
+        padding: 0 4px;
+        vertical-align: top;
+        overflow: hidden;
+        outline-width: 0;
+        white-space: pre-line;
+        background-clip: padding-box;
+      }
+    }
+  }
+  .table-scroll {
+    width: 20px;
   }
 }
 </style>

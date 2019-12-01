@@ -29,7 +29,12 @@ export default {
       })
     }
   },
-
+  mounted () {
+    this.$emit('elementMounted', this.$el.clientHeight, this.rowIndex)
+  },
+  beforeDestroy () {
+    this.$emit('elementUnMounted', this.$el.clientHeight, this.rowIndex)
+  },
   methods: {
     handleSelect (rowIndex, index) {
       return (e) => {
@@ -46,7 +51,7 @@ export default {
           onMousedown={this.handleSelect(this.rowIndex, index)}
           onMouseup={this.handleSelect(this.rowIndex, index)}
           onMouseover={this.handleSelect(this.rowIndex, index)}
-        >{val} {`${this.rowIndex}, ${index}`}</div>)}
+        >{val}</div>)}
       </div>
 
     )

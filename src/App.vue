@@ -18,16 +18,18 @@ export default {
   data () {
     return {
       columns: [
-        { source: 'id', label: 'ID' },
-        { source: 'name.first', label: 'FirstName' },
-        { source: 'name.last', label: 'SecondName' },
-        { source: 'address', label: 'Адресс' }
+        { source: 'id', label: 'ID', inputComponent: 'input' },
+        { source: 'name.first', label: 'FirstName', inputComponent: 'datePicker' },
+        { source: 'name.last', label: 'SecondName', inputComponent: 'select' },
+        { source: 'address', label: 'Адресс', inputComponent: 'input' }
       ],
-      data: [
-        { id: 1, name: { first: 'Ted', last: 'Right' }, address: '' },
-        { id: 2, address: '' }, // HOT will create missing properties on demand
-        { id: 3, name: { first: 'Joan', last: 'Well' }, address: '' }
-      ],
+      data: (() => {
+        const res = []
+        for (let i = 0; i < 100; i++) {
+          res.push({ id: i, name: { first: `Ted${i}`, last: 'Right' }, address: 'asd' },)
+        }
+        return res
+      })()
     }
   },
 
@@ -37,6 +39,9 @@ export default {
 <style lang="scss">
   html, body, #app {
     height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
   *{box-sizing: border-box}
 #app {
