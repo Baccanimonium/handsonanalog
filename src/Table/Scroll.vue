@@ -15,10 +15,6 @@ export default {
       type: Array,
       default: () => []
     },
-    currentScroll: {
-      type: Number,
-      required: true
-    },
     overflowedContainerHeight: {
       type: Number,
       required: true
@@ -47,7 +43,7 @@ export default {
     railStyles () {
       return {
         height: this.railHeight,
-        top: `${(this.containerHeight / this.value.length) * (this.currentScroll / this.avgElementHeight)}px`
+        top: `${(this.containerHeight / this.value.length) * (0 / this.avgElementHeight)}px`
       }
     }
   },

@@ -33,7 +33,7 @@ export default {
     this.$emit('elementMounted', this.$el.clientHeight, this.rowIndex)
   },
   beforeDestroy () {
-    this.$emit('elementUnMounted', this.$el.clientHeight, this.rowIndex)
+    this.$emit('elementUnMounted', this.rowIndex)
   },
   methods: {
     handleSelect (rowIndex, index) {

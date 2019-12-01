@@ -242,7 +242,6 @@ export default {
           <Scroll
             class="table-scroll"
             value={this.value}
-            currentScroll={this.currentScroll}
             overflowedContainerHeight={this.overflowedContainerHeight}
             renderedElementCount={this.renderedElementCount}
             currentScrolledElement={this.currentScrolledElement}
