@@ -23,7 +23,11 @@ export default {
       type: Number,
       required: true
     },
-    currentScrolledElement: {
+    firstRowInViewport: {
+      type: Number,
+      required: true
+    },
+    lastRowInViewport: {
       type: Number,
       required: true
     }
@@ -35,15 +39,16 @@ export default {
   },
   computed: {
     avgElementHeight () {
-      return this.overflowedContainerHeight / (this.renderedElementCount - this.currentScrolledElement)
+      return this.overflowedContainerHeight / (this.renderedElementCount - this.firstRowInViewport)
     },
     railHeight () {
-      return `${this.containerHeight / this.value.length}px`
+      return (this.containerHeight / this.value.length).toFixed(2)
     },
     railStyles () {
+      const scrollPosition = this.firstRowInViewport / (this.value.length - 1 - this.lastRowInViewport + this.firstRowInViewport)
       return {
-        height: this.railHeight,
-        top: `${(this.containerHeight / this.value.length) * (0 / this.avgElementHeight)}px`
+        height: `${this.railHeight}px`,
+        top: `calc(${scrollPosition * 100}% - ${this.railHeight * scrollPosition}px)`
       }
     }
   },

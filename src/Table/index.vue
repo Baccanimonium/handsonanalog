@@ -57,7 +57,7 @@ export default {
       })
     },
     normalizedData () {
-      return this.sortedData.slice(this.startViewedRangeIndex, this.currentScrolledElement + this.renderedElementCount)
+      return this.sortedData.slice(this.startViewedRangeIndex, this.firstRowInViewport + this.renderedElementCount)
     }
   },
   beforeMount () {
@@ -242,9 +242,10 @@ export default {
           <Scroll
             class="table-scroll"
             value={this.value}
+            lastRowInViewport={this.lastRowInViewport}
+            firstRowInViewport={this.firstRowInViewport}
             overflowedContainerHeight={this.overflowedContainerHeight}
             renderedElementCount={this.renderedElementCount}
-            currentScrolledElement={this.currentScrolledElement}
           />
         )}
       </div>
