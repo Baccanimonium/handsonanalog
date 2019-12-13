@@ -18,6 +18,10 @@ export default {
     coord: {
       type: Array,
       default: undefined
+    },
+    tableRef: {
+      type: HTMLDivElement,
+      default: undefined
     }
   },
 
@@ -27,9 +31,11 @@ export default {
         return {}
       }
       const [rowIndex, index, endRowIndex, endIndex] = this.coord
-      const { children } = this.$el.parentElement
+      const { children } = this.tableRef
 
-      const rowRange = Object.values(children).slice((endRowIndex > rowIndex ? rowIndex : endRowIndex) + 2, (endRowIndex < rowIndex ? rowIndex : endRowIndex) + 3)
+      const rowRange = Object.values(children).slice(
+        (endRowIndex > rowIndex ? rowIndex : endRowIndex) + 1,
+        (endRowIndex < rowIndex ? rowIndex : endRowIndex) + 2)
       const height = rowRange.reduce((summ, { clientHeight }) => {
         return summ + clientHeight
       }, 0)
@@ -41,7 +47,7 @@ export default {
       }, 0)
       // const { clientWidth, offsetLeft } = rowChildren[index]
       const { offsetLeft } = columnRange[0]
-      const { clientHeight, children: ItemRowChildren, offsetTop: itemOffsetTop } = children[rowIndex + 2]
+      const { clientHeight, children: ItemRowChildren, offsetTop: itemOffsetTop } = children[rowIndex + 1]
       const { clientWidth, offsetLeft: itemOffsetLeft, } = ItemRowChildren[index]
       return {
         area: { height: `${height - 1}px`,

@@ -6,6 +6,7 @@ import scrollController from './controllers/scrollController'
 import Row from './row'
 import Header from './header'
 import HightLighter from './HightLighter'
+import VerticalScroll from './VerticalScroll'
 import Scroll from './Scroll'
 const ASC = 'ASC'
 const DSC = 'DSC'
@@ -32,9 +33,13 @@ export default {
       sort: undefined,
       coords: undefined,
       activeSelection: false,
+      renderedColumnsCount: 100,
     }
   },
   computed: {
+    slicedColumns () {
+      return this.columns.slice(0, this.renderedColumnsCount)
+    },
     rowStyles () {
       return { gridTemplateColumns: `repeat(${this.columns.length}, minmax(150px, 1fr)` }
     },
@@ -69,6 +74,9 @@ export default {
     document.removeEventListener('paste', this.handlePaste)
   },
   methods: {
+    handleSetColumnCount (i) {
+      this.renderedColumnsCount = i
+    },
     handleonMousedown (coords) {
       this.activeSelection = true
       document.addEventListener('mouseup', this.handleonMouseup)
@@ -209,35 +217,46 @@ export default {
   },
 
   render (h) {
-    const { normalizedData, columns, rowStyles, $refs: { table } } = this
+    const { normalizedData, columns, rowStyles, $refs: { scrollContainer }, offsets, slicedColumns, elementSizes } = this
     return (
       <div class="table" ref="table" onWheel={this.handleScroll}>
         <div class="table-container">
           <Header
             columns={columns}
             rowStyles={rowStyles}
+            offsets={offsets}
             onSort={this.handleSort}
+            onRenderedColumnsCount={this.handleSetColumnCount}
           />
           <div class="table-body" ref="dataContainer">
             <div style={this.containerStyles} ref="scrollContainer">
-              {normalizedData.map((rowData, index) => (
-                <Row
-                  key={index + this.startViewedRangeIndex}
-                  data={rowData}
-                  columns={columns}
-                  rowStyles={rowStyles}
-                  rowIndex={index + this.startViewedRangeIndex}
-                  onMousedown={this.handleonMousedown}
-                  onMouseup={this.handleonMouseup}
-                  onMouseover={this.handleonMouseover}
-                  onElementMounted={this.updateElementSizeMeta}
-                  onElementUnMounted={this.removeElementSizeMeta}
-                />
-              ))}
+              {normalizedData.map((rowData, index) => {
+                const key = index + this.startViewedRangeIndex
+                return (
+                  <Row
+                    key={key}
+                    data={rowData}
+                    slicedColumns={slicedColumns}
+                    columns={columns}
+                    rowStyles={rowStyles}
+                    rowIndex={key}
+                    elementHeight={elementSizes.get(key)}
+                    onMousedown={this.handleonMousedown}
+                    onMouseup={this.handleonMouseup}
+                    onMouseover={this.handleonMouseover}
+                    onElementMounted={this.updateElementSizeMeta}
+                    onElementUnMounted={this.removeElementSizeMeta}
+                  />
+                )
+              })}
             </div>
+            {this.isXOverflowed && (
+              <VerticalScroll
+              />
+            )}
           </div>
         </div>
-        <HightLighter coord={this.coords} tableRef={table} />
+        <HightLighter coord={this.coords} tableRef={scrollContainer} />
         {this.isOverflowed && (
           <Scroll
             class="table-scroll"

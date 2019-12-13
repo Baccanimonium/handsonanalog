@@ -10,12 +10,32 @@ export default {
       type: Array,
       default: () => []
     },
+    offsets: {
+      type: Number,
+      required: true
+    },
+  },
+  mounted () {
+    this.compareSizes()
   },
   methods: {
     handleSort (source) {
       return () => {
         this.$emit('sort', source)
       }
+    },
+    compareSizes () {
+      const { scrollWidth, children, clientWidth } = this.$el
+      let elementHeightSumm = 0
+      const normalizedWidth = this.offsets / 2 + clientWidth
+      let i = 0
+      for (i; i < this.columns.length; i++) {
+        elementHeightSumm += children[i].clientWidth
+        if (elementHeightSumm > normalizedWidth) {
+          break
+        }
+      }
+      this.$emit('renderedColumnsCount', i)
     }
   },
   render (h) {

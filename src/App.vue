@@ -21,12 +21,33 @@ export default {
         { source: 'id', label: 'ID', inputComponent: 'input' },
         { source: 'name.first', label: 'FirstName', inputComponent: 'datePicker' },
         { source: 'name.last', label: 'SecondName', inputComponent: 'select' },
-        { source: 'address', label: 'Адресс', inputComponent: 'input' }
+        { source: 'address', label: 'Адресс', inputComponent: 'input' },
+        ...(() => {
+          const res = []
+          for (let j = 0; j < 100; j++) {
+            res[j] = {}
+            res[j].source = `${j}`
+            res[j].label = `${j}`
+            res[j].inputComponent = 'input'
+          }
+          return res
+        })()
       ],
       data: (() => {
         const res = []
-        for (let i = 0; i < 100; i++) {
-          res.push({ id: i, name: { first: `Ted${i}`, last: 'Right' }, address: 'asd' },)
+        for (let i = 0; i < 1000; i++) {
+          res.push({
+            id: i,
+            name: { first: `Ted${i}`, last: 'Right' },
+            address: 'asd',
+            ...(() => {
+              const res = {}
+              for (let j = 0; j < 100; j++) {
+                res[j] = j * i
+              }
+              return res
+            })()
+          })
         }
         return res
       })()

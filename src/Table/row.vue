@@ -16,15 +16,23 @@ export default {
       type: Array,
       default: () => []
     },
+    slicedColumns: {
+      type: Array,
+      default: () => []
+    },
     data: {
       type: Object,
       default: () => ({})
     },
+    elementHeight: {
+      type: Number,
+      default: undefined
+    }
   },
   computed: {
     normalizedColumnData () {
-      const { data, columns } = this
-      return columns.map(({ source }) => {
+      const { elementHeight, data, columns, slicedColumns } = this
+      return (elementHeight ? slicedColumns : columns).map(({ source }) => {
         return get(source, data)
       })
     }

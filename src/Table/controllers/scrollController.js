@@ -21,6 +21,9 @@ export default {
     isOverflowed () {
       return this.renderedElementCount < this.value.length - 1
     },
+    isXOverflowed () {
+      return this.startViewedRangeIndex < this.columns.length - 1
+    },
     overflowedContainerHeight () {
       return this.dataContainerState.height + this.offsets
     },
