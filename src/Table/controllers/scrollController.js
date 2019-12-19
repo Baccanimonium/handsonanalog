@@ -7,14 +7,22 @@ export default {
   },
   data () {
     return {
+      verticalItemsRef: undefined,
       elementSizes: new Map(),
+      columnsWidth: new Map(),
       dataContainerState: { height: 9999 },
       renderedElementHeight: 0,
       renderedElementCount: 1,
       firstRowInViewport: 0,
       startViewedRangeIndex: 0,
       containerScroll: 0,
-      lastRowInViewport: 0
+      lastRowInViewport: 0,
+      // vertical scroll
+      verticalContainerWidth: undefined,
+      firstColumnInViewport: 0,
+      lastColumnInViewport: 0,
+      renderedColumnsCount: 1,
+
     }
   },
   computed: {
@@ -27,10 +35,18 @@ export default {
     overflowedContainerHeight () {
       return this.dataContainerState.height + this.offsets
     },
+    containerWidthWithOffset () {
+      return this.verticalContainerWidth + this.offsets
+    },
     containerStyles () {
       return {
         transform: `translateY(-${this.containerScroll}px)`
       }
+    }
+  },
+  watch: {
+    verticalContainerWidth (newValue, oldValue) {
+      this.verticalContainerWidth =newValue.clientWidth
     }
   },
   mounted () {
@@ -125,18 +141,34 @@ export default {
     handleScroll (e) {
       e.preventDefault()
       e.stopPropagation()
-      if (e.deltaY > 0) {
-        const { $refs: { scrollContainer }, dataContainerState: { bottom: ContainerBottom } } = this
-        const { bottom } = scrollContainer.getBoundingClientRect()
-        this.calcPosition(ContainerBottom > bottom - 30 ? bottom - ContainerBottom : 30)
+      if (!e.ctrlKey) {
+        if (e.deltaY > 0) {
+          const { $refs: { scrollContainer }, dataContainerState: { bottom: ContainerBottom } } = this
+          const { bottom } = scrollContainer.getBoundingClientRect()
+          this.calcPosition(ContainerBottom > bottom - 30 ? bottom - ContainerBottom : 30)
+        } else {
+          this.calcPosition(this.containerScroll - 30 < 0 ? -this.containerScroll : -30)
+        }
       } else {
-        this.calcPosition(this.containerScroll - 30 < 0 ? -this.containerScroll : -30)
+        const { firstColumnInViewport, columns } = this
+        this.firstColumnInViewport = (() => {
+          if (e.deltaY > 0) {
+            const nextColumnValue = firstColumnInViewport + 1
+            return columns.length > nextColumnValue ? nextColumnValue : firstColumnInViewport
+          } else {
+            const nextColumnValue = firstColumnInViewport - 1
+            return nextColumnValue >= 0 ? nextColumnValue : firstColumnInViewport
+          }
+        })()
       }
     },
     removeElementSizeMeta (elementIndex) {
       this.renderedElementHeight -= this.elementSizes.get(elementIndex)
       this.elementSizes.delete(elementIndex)
       this.elementSizes = new Map(this.elementSizes)
+    },
+    handleVerticalContainerInstaciate (instance) {
+      this.verticalItemsRef = instance
     },
     updateElementSizeMeta (elementHeight, elementIndex) {
       this.renderedElementHeight += elementHeight
@@ -146,5 +178,24 @@ export default {
         this.renderedElementCount += 1
       }
     },
+    onHorizontalElementMounted (elementWidth, elementIndex) {
+      console.log('m')
+      this.columnsWidth.set(elementIndex, elementWidth)
+      this.reCalcColumnsState()
+    },
+    onHorizontalElementUnMounted (elementIndex) {
+      console.log('n')
+      this.columnsWidth.delete(elementIndex)
+    },
+    reCalcColumnsState () {
+      const { verticalContainerWidth } = this
+      let summOfColumnWidth = 0
+      for (const width of this.columnsWidth.values()) {
+        summOfColumnWidth += width
+        if (verticalContainerWidth < summOfColumnWidth) {
+          // TODO: ПИСаТь ОТСЮДА
+        }
+      }
+    }
   },
 }

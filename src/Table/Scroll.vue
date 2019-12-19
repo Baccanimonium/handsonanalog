@@ -15,14 +15,6 @@ export default {
       type: Array,
       default: () => []
     },
-    overflowedContainerHeight: {
-      type: Number,
-      required: true
-    },
-    renderedElementCount: {
-      type: Number,
-      required: true
-    },
     firstRowInViewport: {
       type: Number,
       required: true
@@ -38,9 +30,6 @@ export default {
     }
   },
   computed: {
-    avgElementHeight () {
-      return this.overflowedContainerHeight / (this.renderedElementCount - this.firstRowInViewport)
-    },
     railHeight () {
       return (this.containerHeight / this.value.length).toFixed(2)
     },

@@ -4,7 +4,7 @@ import { PureArraySlice } from './utils/pureArrayMethods'
 import copy from './utils/copy'
 import scrollController from './controllers/scrollController'
 import Row from './row'
-import Header from './header'
+import Header from './Header/index'
 import HightLighter from './HightLighter'
 import VerticalScroll from './VerticalScroll'
 import Scroll from './Scroll'
@@ -33,12 +33,11 @@ export default {
       sort: undefined,
       coords: undefined,
       activeSelection: false,
-      renderedColumnsCount: 100,
     }
   },
   computed: {
     slicedColumns () {
-      return this.columns.slice(0, this.renderedColumnsCount)
+      return this.columns.slice(this.firstColumnInViewport, this.renderedColumnsCount)
     },
     rowStyles () {
       return { gridTemplateColumns: `repeat(${this.columns.length}, minmax(150px, 1fr)` }
@@ -74,8 +73,9 @@ export default {
     document.removeEventListener('paste', this.handlePaste)
   },
   methods: {
-    handleSetColumnCount (i) {
-      this.renderedColumnsCount = i
+    handleSetColumnCount (renderedColumnsCount, lastColumnInViewport) {
+      this.renderedColumnsCount = renderedColumnsCount
+      this.lastColumnInViewport = lastColumnInViewport
     },
     handleonMousedown (coords) {
       this.activeSelection = true
@@ -223,10 +223,14 @@ export default {
         <div class="table-container">
           <Header
             columns={columns}
+            slicedColumns={slicedColumns}
             rowStyles={rowStyles}
             offsets={offsets}
             onSort={this.handleSort}
             onRenderedColumnsCount={this.handleSetColumnCount}
+            onInstaciated={this.handleVerticalContainerInstaciate}
+            handleElementMounted={this.onHorizontalElementMounted}
+            handleElementUnMounted={this.onHorizontalElementUnMounted}
           />
           <div class="table-body" ref="dataContainer">
             <div style={this.containerStyles} ref="scrollContainer">
@@ -250,11 +254,14 @@ export default {
                 )
               })}
             </div>
-            {this.isXOverflowed && (
-              <VerticalScroll
-              />
-            )}
           </div>
+          {this.isXOverflowed && (
+            <VerticalScroll
+              columns={columns}
+              firstColumnInViewport={this.firstColumnInViewport}
+              lastColumnInViewport={this.lastColumnInViewport}
+            />
+          )}
         </div>
         <HightLighter coord={this.coords} tableRef={scrollContainer} />
         {this.isOverflowed && (
@@ -263,8 +270,6 @@ export default {
             value={this.value}
             lastRowInViewport={this.lastRowInViewport}
             firstRowInViewport={this.firstRowInViewport}
-            overflowedContainerHeight={this.overflowedContainerHeight}
-            renderedElementCount={this.renderedElementCount}
           />
         )}
       </div>
@@ -306,7 +311,6 @@ export default {
         vertical-align: top;
         overflow: hidden;
         outline-width: 0;
-        white-space: pre-line;
         background-clip: padding-box;
       }
     }
