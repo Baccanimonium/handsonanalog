@@ -18,11 +18,12 @@ export default {
       containerScroll: 0,
       lastRowInViewport: 0,
       // vertical scroll
-      verticalContainerWidth: undefined,
+      containerWidth: 0,
+      startColumnIndex: 0,
       firstColumnInViewport: 0,
       lastColumnInViewport: 0,
       renderedColumnsCount: 1,
-
+      horizontalScroll: 0,
     }
   },
   computed: {
@@ -36,21 +37,44 @@ export default {
       return this.dataContainerState.height + this.offsets
     },
     containerWidthWithOffset () {
-      return this.verticalContainerWidth + this.offsets
+      return this.containerWidth + this.offsets
     },
     containerStyles () {
       return {
         transform: `translateY(-${this.containerScroll}px)`
       }
+    },
+    horizontalStyles () {
+      return {
+        transform: `translateX(-${this.horizontalScroll}px)`
+      }
     }
   },
   watch: {
-    verticalContainerWidth (newValue, oldValue) {
-      this.verticalContainerWidth =newValue.clientWidth
+    verticalItemsRef (newValue, oldValue) {
+      this.containerWidth = newValue.clientWidth
     }
   },
   mounted () {
     this.updatedTableSizes()
+    const verticalInterval = setInterval(() => {
+      if (this.overflowedContainerHeight > this.renderedElementHeight) {
+        this.renderedElementCount += 1
+      } else {
+        clearInterval(verticalInterval)
+      }
+    }, 0)
+    const horizontalInterval = setInterval(() => {
+      let summRess = 0
+      for (const width of this.columnsWidth.values()) {
+        summRess += width
+      }
+      if (this.containerWidthWithOffset > summRess) {
+        this.renderedColumnsCount += 1
+      } else {
+        clearInterval(horizontalInterval)
+      }
+    }, 0)
   },
   methods: {
     calcPosition (newValue) {
@@ -133,6 +157,68 @@ export default {
         }
       }
     },
+    calcHorizontalScrollState (newValue, prevValue) {
+      const { horizontalScroll, firstColumnInViewport, startViewedRangeIndex, offsets, columnsWidth } = this
+      const nextScroll = newValue + prevValue
+      const halfOfOffset = offsets / 2
+      if (firstColumnInViewport === 0 && nextScroll < halfOfOffset) {
+        // console.log(startViewedRangeIndex === 0, nextScroll, halfOfOffset, nextScroll < halfOfOffset)
+        this.horizontalScroll = nextScroll
+        this.firstColumnInViewport += 1
+        // console.log(this.renderedColumnsCount + (newValue > prevValue ? 1 : -1))
+        this.renderedColumnsCount = this.renderedColumnsCount + (newValue > prevValue ? 1 : -1)
+      } else {
+        const { containerWidth, containerWidthWithOffset } = this
+        const rightViewPosition = containerWidth + halfOfOffset
+        let elementScrollSumm = 0
+        let firstElementFound = false
+        let LastViewPortElementFound = false
+        // console.log(newValue)
+        if (newValue > 0) {
+          for (let i = firstColumnInViewport; i < columnsWidth.size; i++) {
+            elementScrollSumm += columnsWidth.get(i)
+            if (newValue <= elementScrollSumm && !firstElementFound) {
+              this.startColumnIndex += i + 1 - this.firstColumnInViewport
+              this.firstColumnInViewport = i + 1
+              this.horizontalScroll = elementScrollSumm - nextScroll
+              firstElementFound = true
+            }
+            if (rightViewPosition <= elementScrollSumm && !LastViewPortElementFound) {
+              // console.log('h',i)
+              this.lastColumnInViewport = i + 1
+              LastViewPortElementFound = true
+            }
+            if (containerWidthWithOffset <= elementScrollSumm) {
+              this.renderedColumnsCount = i + 1
+              console.log(i, this.renderedColumnsCount)
+              return
+            }
+          }
+          this.renderedColumnsCount += 1
+          // console.log(123,this.renderedColumnsCount)
+        } else {
+          for (let i = firstColumnInViewport; i < columnsWidth.size; i--) {
+            elementScrollSumm += columnsWidth.get(i)
+            if (newValue <= elementScrollSumm && !firstElementFound) {
+              console.log(i + 1 - this.firstColumnInViewport)
+              this.startColumnIndex += i + 1 - this.firstColumnInViewport
+              this.firstColumnInViewport = i + 1
+              this.horizontalScroll = elementScrollSumm - nextScroll
+              firstElementFound = true
+            }
+            if (rightViewPosition <= elementScrollSumm && !LastViewPortElementFound) {
+              this.lastColumnInViewport = i + 1
+              LastViewPortElementFound = true
+            }
+            if (containerWidthWithOffset <= elementScrollSumm) {
+              this.renderedColumnsCount = i + 1
+              return
+            }
+          }
+          this.renderedColumnsCount -= 1
+        }
+      }
+    },
     updatedTableSizes () {
       const { dataContainer } = this.$refs
       const { bottom } = dataContainer.getBoundingClientRect()
@@ -150,16 +236,16 @@ export default {
           this.calcPosition(this.containerScroll - 30 < 0 ? -this.containerScroll : -30)
         }
       } else {
-        const { firstColumnInViewport, columns } = this
-        this.firstColumnInViewport = (() => {
+        const { firstColumnInViewport, columns, columnsWidth } = this
+        this.calcHorizontalScrollState((() => {
           if (e.deltaY > 0) {
             const nextColumnValue = firstColumnInViewport + 1
-            return columns.length > nextColumnValue ? nextColumnValue : firstColumnInViewport
+            return columns.length > nextColumnValue ? columnsWidth.get(nextColumnValue) : 0
           } else {
             const nextColumnValue = firstColumnInViewport - 1
-            return nextColumnValue >= 0 ? nextColumnValue : firstColumnInViewport
+            return nextColumnValue >= 0 ? -columnsWidth.get(nextColumnValue) : 0
           }
-        })()
+        })(), this.horizontalScroll)
       }
     },
     removeElementSizeMeta (elementIndex) {
@@ -174,28 +260,14 @@ export default {
       this.renderedElementHeight += elementHeight
       this.elementSizes.set(elementIndex, elementHeight)
       this.elementSizes = new Map(this.elementSizes)
-      if (this.overflowedContainerHeight > this.renderedElementHeight) {
-        this.renderedElementCount += 1
-      }
     },
     onHorizontalElementMounted (elementWidth, elementIndex) {
-      console.log('m')
+      // console.log('m')
       this.columnsWidth.set(elementIndex, elementWidth)
-      this.reCalcColumnsState()
     },
     onHorizontalElementUnMounted (elementIndex) {
-      console.log('n')
+      // console.log('n')
       this.columnsWidth.delete(elementIndex)
-    },
-    reCalcColumnsState () {
-      const { verticalContainerWidth } = this
-      let summOfColumnWidth = 0
-      for (const width of this.columnsWidth.values()) {
-        summOfColumnWidth += width
-        if (verticalContainerWidth < summOfColumnWidth) {
-          // TODO: ПИСаТь ОТСЮДА
-        }
-      }
     }
-  },
+  }
 }

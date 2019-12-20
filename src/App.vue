@@ -34,20 +34,19 @@ export default {
         })()
       ],
       data: (() => {
-        const res = []
+        const res = Array(1000)
         for (let i = 0; i < 1000; i++) {
-          res.push({
-            id: i,
-            name: { first: `Ted${i}`, last: 'Right' },
-            address: 'asd',
-            ...(() => {
-              const res = {}
-              for (let j = 0; j < 100; j++) {
-                res[j] = j * i
-              }
-              return res
-            })()
-          })
+          const g = (() => {
+            const res = {}
+            for (let j = 0; j < 1000; j++) {
+              res[j] = j * i
+            }
+            return res
+          })()
+          g.id = i
+          g.name = { first: `Ted${i}`, last: 'Right' }
+          g.address = 'asd'
+          res[i] = g
         }
         return res
       })()

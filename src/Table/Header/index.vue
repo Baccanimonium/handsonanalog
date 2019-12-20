@@ -20,6 +20,10 @@ export default {
       type: Number,
       required: true
     },
+    startColumnIndex: {
+      type: Number,
+      required: true
+    },
     handleElementMounted: {
       type: Function,
       required: true
@@ -30,9 +34,8 @@ export default {
     },
   },
   mounted () {
-    this.compareSizes()
-    this.$emit('onInstaciated', this.$el)
-    this.$emit('onHorizontalElementMounted', this.$el)
+    // this.compareSizes()
+    this.$emit('instaciated', this.$el)
   },
   methods: {
     handleSort (source) {
@@ -59,14 +62,14 @@ export default {
     }
   },
   render (h) {
-    const { slicedColumns, rowStyles, handleElementMounted, handleElementUnMounted } = this
+    const { slicedColumns, rowStyles, handleElementMounted, handleElementUnMounted, startColumnIndex } = this
     return (
       <div class="th" style={rowStyles}>
         {slicedColumns.map(({ label, source }, i) => (
           <HeaderCell
             key={label}
             label={label}
-            columnIndex={i}
+            columnIndex={i + startColumnIndex}
             onElementMounted={handleElementMounted}
             onElementUnMounted={handleElementUnMounted}
             onClick={this.handleSort(source)}

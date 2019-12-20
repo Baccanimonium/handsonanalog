@@ -21,7 +21,7 @@ export default {
     },
   },
   mounted () {
-    this.$emit('elementMounted', this.$el.clientHeight, this.columnIndex)
+    this.$emit('elementMounted', this.$el.clientWidth, this.columnIndex)
   },
   beforeDestroy () {
     this.$emit('onElementUnMounted', this.columnIndex)

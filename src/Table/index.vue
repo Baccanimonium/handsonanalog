@@ -37,10 +37,14 @@ export default {
   },
   computed: {
     slicedColumns () {
-      return this.columns.slice(this.firstColumnInViewport, this.renderedColumnsCount)
+      console.log(this.startColumnIndex, this.renderedColumnsCount)
+      return this.columns.slice(this.startColumnIndex, this.renderedColumnsCount)
+    },
+    gridStyles () {
+      return { gridTemplateColumns: `repeat(${this.columns.length}, 150px)` }
     },
     rowStyles () {
-      return { gridTemplateColumns: `repeat(${this.columns.length}, minmax(150px, 1fr)` }
+      return { ...this.gridStyles, ...this.horizontalStyles }
     },
     sortedData () {
       const { value, sort: { source, direction } = {} } = this
@@ -73,10 +77,6 @@ export default {
     document.removeEventListener('paste', this.handlePaste)
   },
   methods: {
-    handleSetColumnCount (renderedColumnsCount, lastColumnInViewport) {
-      this.renderedColumnsCount = renderedColumnsCount
-      this.lastColumnInViewport = lastColumnInViewport
-    },
     handleonMousedown (coords) {
       this.activeSelection = true
       document.addEventListener('mouseup', this.handleonMouseup)
@@ -152,7 +152,6 @@ export default {
 
     closeNewDocumentList (a) {
       const { key, altKey, ctrlKey, shiftKey } = a
-
       const [rowIndex, index, endRowIndex, endIndex] = this.coords
       if (shiftKey) {
         switch (key) {
@@ -217,17 +216,17 @@ export default {
   },
 
   render (h) {
-    const { normalizedData, columns, rowStyles, $refs: { scrollContainer }, offsets, slicedColumns, elementSizes } = this
+    const { normalizedData, startColumnIndex, columns, rowStyles, $refs: { scrollContainer }, offsets, slicedColumns, elementSizes } = this
     return (
       <div class="table" ref="table" onWheel={this.handleScroll}>
         <div class="table-container">
           <Header
             columns={columns}
             slicedColumns={slicedColumns}
+            startColumnIndex={startColumnIndex}
             rowStyles={rowStyles}
             offsets={offsets}
             onSort={this.handleSort}
-            onRenderedColumnsCount={this.handleSetColumnCount}
             onInstaciated={this.handleVerticalContainerInstaciate}
             handleElementMounted={this.onHorizontalElementMounted}
             handleElementUnMounted={this.onHorizontalElementUnMounted}
