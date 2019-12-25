@@ -9,7 +9,6 @@ export default {
     return {
       verticalItemsRef: undefined,
       elementSizes: new Map(),
-      columnsWidth: new Map(),
       dataContainerState: { height: 9999 },
       renderedElementHeight: 0,
       renderedElementCount: 1,
@@ -18,6 +17,7 @@ export default {
       containerScroll: 0,
       lastRowInViewport: 0,
       // vertical scroll
+      horizontalScrollShift: 0,
       containerWidth: 0,
       startColumnIndex: 0,
       firstColumnInViewport: 0,
@@ -27,11 +27,18 @@ export default {
     }
   },
   computed: {
+    columnsWidth () {
+      const { normalizedSettings: { columnWidth } } = this
+      return new Map(this.columns.map((item, i) => [i, columnWidth]))
+    },
     isOverflowed () {
       return this.renderedElementCount < this.value.length - 1
     },
     isXOverflowed () {
       return this.startViewedRangeIndex < this.columns.length - 1
+    },
+    halfOffset () {
+      return this.offsets / 2
     },
     overflowedContainerHeight () {
       return this.dataContainerState.height + this.offsets
@@ -51,7 +58,7 @@ export default {
     }
   },
   watch: {
-    verticalItemsRef (newValue, oldValue) {
+    verticalItemsRef (newValue) {
       this.containerWidth = newValue.clientWidth
     }
   },
@@ -64,17 +71,18 @@ export default {
         clearInterval(verticalInterval)
       }
     }, 0)
-    const horizontalInterval = setInterval(() => {
+    this.$nextTick(() => {
       let summRess = 0
+      let i = 0
       for (const width of this.columnsWidth.values()) {
         summRess += width
+        if (this.containerWidthWithOffset < summRess || this.columnsWidth.size === i + 1) {
+          this.renderedColumnsCount = i + 1
+          break
+        }
+        i++
       }
-      if (this.containerWidthWithOffset > summRess) {
-        this.renderedColumnsCount += 1
-      } else {
-        clearInterval(horizontalInterval)
-      }
-    }, 0)
+    })
   },
   methods: {
     calcPosition (newValue) {
@@ -158,64 +166,70 @@ export default {
       }
     },
     calcHorizontalScrollState (newValue, prevValue) {
-      const { horizontalScroll, firstColumnInViewport, startViewedRangeIndex, offsets, columnsWidth } = this
+      const {
+        firstColumnInViewport, startColumnIndex, columnsWidth, halfOffset, horizontalScrollShift,
+        containerWidthWithOffset, lastColumnInViewport
+      } = this
       const nextScroll = newValue + prevValue
-      const halfOfOffset = offsets / 2
-      if (firstColumnInViewport === 0 && nextScroll < halfOfOffset) {
-        // console.log(startViewedRangeIndex === 0, nextScroll, halfOfOffset, nextScroll < halfOfOffset)
+      if (startColumnIndex === 0 && nextScroll < halfOffset) {
         this.horizontalScroll = nextScroll
         this.firstColumnInViewport += 1
-        // console.log(this.renderedColumnsCount + (newValue > prevValue ? 1 : -1))
         this.renderedColumnsCount = this.renderedColumnsCount + (newValue > prevValue ? 1 : -1)
       } else {
-        const { containerWidth, containerWidthWithOffset } = this
-        const rightViewPosition = containerWidth + halfOfOffset
         let elementScrollSumm = 0
-        let firstElementFound = false
-        let LastViewPortElementFound = false
-        // console.log(newValue)
+        let tempElementScrollSumm = 0
         if (newValue > 0) {
           for (let i = firstColumnInViewport; i < columnsWidth.size; i++) {
-            elementScrollSumm += columnsWidth.get(i)
-            if (newValue <= elementScrollSumm && !firstElementFound) {
-              this.startColumnIndex += i + 1 - this.firstColumnInViewport
+            tempElementScrollSumm += columnsWidth.get(i)
+            if (newValue <= tempElementScrollSumm) {
               this.firstColumnInViewport = i + 1
-              this.horizontalScroll = elementScrollSumm - nextScroll
-              firstElementFound = true
+              break
             }
-            if (rightViewPosition <= elementScrollSumm && !LastViewPortElementFound) {
-              // console.log('h',i)
-              this.lastColumnInViewport = i + 1
-              LastViewPortElementFound = true
-            }
-            if (containerWidthWithOffset <= elementScrollSumm) {
-              this.renderedColumnsCount = i + 1
-              console.log(i, this.renderedColumnsCount)
-              return
-            }
+            elementScrollSumm = tempElementScrollSumm
           }
-          this.renderedColumnsCount += 1
-          // console.log(123,this.renderedColumnsCount)
         } else {
-          for (let i = firstColumnInViewport; i < columnsWidth.size; i--) {
-            elementScrollSumm += columnsWidth.get(i)
-            if (newValue <= elementScrollSumm && !firstElementFound) {
-              console.log(i + 1 - this.firstColumnInViewport)
-              this.startColumnIndex += i + 1 - this.firstColumnInViewport
-              this.firstColumnInViewport = i + 1
-              this.horizontalScroll = elementScrollSumm - nextScroll
-              firstElementFound = true
+          for (let i = firstColumnInViewport - 1; i < 0; i--) {
+            tempElementScrollSumm -= columnsWidth.get(i)
+            if (newValue >= tempElementScrollSumm) {
+              this.firstColumnInViewport = i
+              break
             }
-            if (rightViewPosition <= elementScrollSumm && !LastViewPortElementFound) {
-              this.lastColumnInViewport = i + 1
-              LastViewPortElementFound = true
-            }
-            if (containerWidthWithOffset <= elementScrollSumm) {
-              this.renderedColumnsCount = i + 1
-              return
-            }
+            elementScrollSumm = tempElementScrollSumm
           }
-          this.renderedColumnsCount -= 1
+        }
+        this.horizontalScrollShift = this.horizontalScrollShift - (newValue - (tempElementScrollSumm - elementScrollSumm))
+        let firstElementScrollOffset = 0
+        let j = this.firstColumnInViewport === 0 ? 0 : this.firstColumnInViewport - 1
+        for (j; j >= 0; j--) {
+          console.log(halfOffset, firstElementScrollOffset, j)
+          if (halfOffset <= firstElementScrollOffset || j === 0) {
+            this.startColumnIndex = j
+            // console.log(j, firstElementScrollOffset, horizontalScrollShift, firstElementScrollOffset + horizontalScrollShift)
+            this.horizontalScroll = -(firstElementScrollOffset + horizontalScrollShift)
+            console.log(this.horizontalScroll)
+            break
+          }
+          firstElementScrollOffset += columnsWidth.get(j)
+        }
+        const rightViewPosition = containerWidthWithOffset - halfOffset
+        let _elementScrollSumm = 0
+        let lastCov = false
+        let i = firstColumnInViewport
+        for (i; i < columnsWidth.size; i++) {
+          _elementScrollSumm += columnsWidth.get(i)
+          console.log(_elementScrollSumm, i)
+          if (rightViewPosition <= _elementScrollSumm && !lastCov) {
+            this.lastColumnInViewport = i + 1
+            lastCov = true
+          }
+          if (containerWidthWithOffset <= _elementScrollSumm) {
+            this.renderedColumnsCount = i + 1
+            break
+          }
+        }
+        if (i === columnsWidth.size) {
+          this.lastColumnInViewport = lastColumnInViewport > columnsWidth.size ? columnsWidth.size : lastColumnInViewport
+          this.renderedColumnsCount = columnsWidth.size
         }
       }
     },
@@ -263,11 +277,11 @@ export default {
     },
     onHorizontalElementMounted (elementWidth, elementIndex) {
       // console.log('m')
-      this.columnsWidth.set(elementIndex, elementWidth)
+      // this.columnsWidth.set(elementIndex, elementWidth)
     },
     onHorizontalElementUnMounted (elementIndex) {
       // console.log('n')
-      this.columnsWidth.delete(elementIndex)
+      // this.columnsWidth.delete(elementIndex)
     }
   }
 }

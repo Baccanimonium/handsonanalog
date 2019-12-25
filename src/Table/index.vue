@@ -11,6 +11,10 @@ import Scroll from './Scroll'
 const ASC = 'ASC'
 const DSC = 'DSC'
 
+const defaultSettings = {
+  columnWidth: 150
+}
+
 export default {
   name: 'Table',
   components: {
@@ -19,6 +23,10 @@ export default {
   },
   mixins: [scrollController],
   props: {
+    settings: {
+      type: Object,
+      default: () => ({})
+    },
     columns: {
       type: Array,
       default: () => []
@@ -36,8 +44,10 @@ export default {
     }
   },
   computed: {
+    normalizedSettings () {
+      return { ...defaultSettings, ...this.settings }
+    },
     slicedColumns () {
-      console.log(this.startColumnIndex, this.renderedColumnsCount)
       return this.columns.slice(this.startColumnIndex, this.renderedColumnsCount)
     },
     gridStyles () {
