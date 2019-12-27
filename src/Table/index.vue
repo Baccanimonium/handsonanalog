@@ -59,7 +59,7 @@ export default {
     },
     sortedData () {
       const { value, sort: { source, direction } = {} } = this
-      // if (!source) return value
+      if (!source) return value
       const normalizedDiretion = direction === ASC ? -1 : 1
       const newArray = Array.from(value)
       newArray.sort((first, second) => {
@@ -86,6 +86,7 @@ export default {
     document.addEventListener('paste', this.handlePaste)
   },
   mounted () {
+    window.a = this
     this.updateSizes()
   },
   beforeDestroy () {
@@ -232,12 +233,14 @@ export default {
     },
     updateSizes () {
       const { table: { clientHeight } } = this.$refs
-      console.log(clientHeight, this.$refs.table)
       this.tableHeight = clientHeight
     },
   },
   render (h) {
-    const { normalizedData, startColumnIndex, columns, rowStyles, $refs: { scrollContainer }, offsets, slicedColumns, elementSizes } = this
+    const {
+      normalizedData, startColumnIndex, columns, rowStyles, $refs: { scrollContainer }, offsets, slicedColumns,
+      elementSizes
+    } = this
     return (
       <div class="table" ref="table" onWheel={this.handleScroll}>
         <div class="table-container">

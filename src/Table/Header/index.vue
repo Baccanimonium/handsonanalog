@@ -70,8 +70,6 @@ export default {
             key={label}
             label={label}
             columnIndex={i + startColumnIndex}
-            onElementMounted={handleElementMounted}
-            onElementUnMounted={handleElementUnMounted}
             onClick={this.handleSort(source)}
           />
         ))}

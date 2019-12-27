@@ -1,5 +1,5 @@
 <template>
-  <div class="table-scroll">
+  <div class="table-horizontal-scroll">
     <div
       class="scroll-rail"
       :style="railStyles"
@@ -30,16 +30,18 @@ export default {
     }
   },
   computed: {
-    railHeight () {
-      return (this.containerWidth / this.columns.length).toFixed(2)
+    railWidth () {
+      const result = (this.containerWidth / this.columns.length).toFixed(2)
+      return result < 10 ? 10 : result
     },
     railStyles () {
       const scrollPosition = this.firstColumnInViewport / (
         this.columns.length - 1 - this.lastColumnInViewport + this.firstColumnInViewport
       )
+      // console.log(scrollPosition, this.firstColumnInViewport, this.lastColumnInViewport, -this.lastColumnInViewport + this.firstColumnInViewport)
       return {
-        width: `${this.railHeight}px`,
-        left: `calc(${scrollPosition * 100}% - ${this.railHeight * scrollPosition}px)`
+        width: `${this.railWidth}px`,
+        left: `calc(${scrollPosition * 100}% - ${this.railWidth * scrollPosition}px)`
       }
     }
   },
@@ -55,12 +57,24 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-  .table-scroll {
-    height: 20px;
+  .table-horizontal-scroll {
+    height: 4px;
+    position: relative;
+    width: 100%;
     .scroll-rail {
-      position: relative;
-      width: 100%;
+      border-radius: 4px;
+      z-index: 2;
+      height: 100%;
+      position: absolute;
+      left: 0;
+      bottom: 1px;
       background-color: gray;
+      transition-property: left, transform;
+      transition-duration: 150ms;
+      transition-timing-function: linear;
+      &:hover {
+        transform: scale(2);
+      }
     }
   }
 </style>
