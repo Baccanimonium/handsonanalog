@@ -23,22 +23,37 @@ export default {
       settings: {},
       meta: [],
       columns: [
-        { source: 'id', label: 'ID' },
-        { source: 'name.first', label: 'FirstName' },
-        { source: 'name.last', label: 'SecondName' },
-        { source: 'address', label: 'Адресс' }
+        { source: 'id', label: 'ID', inputComponent: 'input' },
+        { source: 'name.first', label: 'FirstName', inputComponent: 'datePicker' },
+        { source: 'name.last', label: 'SecondName', inputComponent: 'select' },
+        { source: 'address', label: 'Адресс', inputComponent: 'input' },
+        ...(() => {
+          const res = []
+          for (let j = 0; j < 20; j++) {
+            res[j] = {}
+            res[j].source = `${j}`
+            res[j].label = `${j}`
+            res[j].inputComponent = 'input'
+          }
+          return res
+        })()
       ],
       data: (() => {
-        const res = []
-        for (let i = 0; i < 250; i++) {
-          res.push({ id: i, name: { first: `Ted${i}`, last: 'Right' }, address: Math.random() })
+        const res = Array(50)
+        for (let i = 0; i < 50; i++) {
+          const g = (() => {
+            const res = {}
+            for (let j = 0; j < 50; j++) {
+              res[j] = j * i
+            }
+            return res
+          })()
+          g.id = i
+          g.name = { first: `Ted${i}`, last: 'Right' }
+          g.address = 'asd'
+          res[i] = g
         }
         return res
-        // [
-        //   { id: 1, name: { first: 'Ted', last: 'Right' }, address: '' },
-        //   { id: 2, address: '' }, // HOT will create missing properties on demand
-        //   { id: 3, name: { first: 'Joan', last: 'Well' }, address: '' }
-        // ]
       })()
     }
   },
@@ -48,6 +63,9 @@ export default {
 <style lang="scss">
   html, body, #app {
     height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 #app {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;

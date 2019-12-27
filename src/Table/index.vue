@@ -2,11 +2,18 @@
 import { get, set } from './utils'
 import { PureArraySlice } from './utils/pureArrayMethods'
 import copy from './utils/copy'
+import scrollController from './controllers/scrollController'
 import Row from './row'
-import Header from './header'
+import Header from './Header/index'
 import HightLighter from './HightLighter'
+import VerticalScroll from './VerticalScroll'
+import Scroll from './Scroll'
 const ASC = 'ASC'
 const DSC = 'DSC'
+
+const defaultSettings = {
+  columnWidth: 150
+}
 
 export default {
   name: 'Table',
@@ -14,6 +21,7 @@ export default {
     Row,
     Header
   },
+  mixins: [scrollController],
   props: {
     settings: {
       type: Object,
@@ -33,14 +41,23 @@ export default {
       tableHeight: 0,
       sort: undefined,
       coords: undefined,
-      activeSelection: false
+      activeSelection: false,
     }
   },
   computed: {
-    rowStyles () {
-      return { gridTemplateColumns: `repeat(${this.columns.length}, minmax(150px, 1fr)` }
+    normalizedSettings () {
+      return { ...defaultSettings, ...this.settings }
     },
-    normalizedData () {
+    slicedColumns () {
+      return this.columns.slice(this.startColumnIndex, this.renderedColumnsCount)
+    },
+    gridStyles () {
+      return { gridTemplateColumns: `repeat(${this.columns.length}, 150px)` }
+    },
+    rowStyles () {
+      return { ...this.gridStyles, ...this.horizontalStyles }
+    },
+    sortedData () {
       const { value, sort: { source, direction } = {} } = this
       // if (!source) return value
       const normalizedDiretion = direction === ASC ? -1 : 1
@@ -58,6 +75,9 @@ export default {
         return 0
       })
       return newArray
+    },
+    normalizedData () {
+      return this.sortedData.slice(this.startViewedRangeIndex, this.firstRowInViewport + this.renderedElementCount)
     }
   },
   beforeMount () {
@@ -149,7 +169,6 @@ export default {
 
     closeNewDocumentList (a) {
       const { key, altKey, ctrlKey, shiftKey } = a
-
       const [rowIndex, index, endRowIndex, endIndex] = this.coords
       if (shiftKey) {
         switch (key) {
@@ -218,26 +237,62 @@ export default {
     },
   },
   render (h) {
-    const { normalizedData, columns, rowStyles, $refs: { table } } = this
+    const { normalizedData, startColumnIndex, columns, rowStyles, $refs: { scrollContainer }, offsets, slicedColumns, elementSizes } = this
     return (
-      <div class="table" ref="table">
-        <HightLighter coord={this.coords} tableRef={table} />
-        <Header
-          columns={columns}
-          rowStyles={rowStyles}
-          onSort={this.handleSort}
-        />
-        {normalizedData.map((rowData, index) => (
-          <Row
-            data={rowData}
+      <div class="table" ref="table" onWheel={this.handleScroll}>
+        <div class="table-container">
+          <Header
+            ref="header"
             columns={columns}
+            slicedColumns={slicedColumns}
+            startColumnIndex={startColumnIndex}
             rowStyles={rowStyles}
-            rowIndex={index}
-            onMousedown={this.handleonMousedown}
-            onMouseup={this.handleonMouseup}
-            onMouseover={this.handleonMouseover}
+            offsets={offsets}
+            onSort={this.handleSort}
+            onInstaciated={this.handleVerticalContainerInstaciate}
+            handleElementMounted={this.onHorizontalElementMounted}
+            handleElementUnMounted={this.onHorizontalElementUnMounted}
           />
-        ))}
+          <div class="table-body" ref="dataContainer">
+            <div style={this.containerStyles} ref="scrollContainer">
+              {normalizedData.map((rowData, index) => {
+                const key = index + this.startViewedRangeIndex
+                return (
+                  <Row
+                    key={key}
+                    data={rowData}
+                    slicedColumns={slicedColumns}
+                    columns={columns}
+                    rowStyles={rowStyles}
+                    rowIndex={key}
+                    elementHeight={elementSizes.get(key)}
+                    onMousedown={this.handleonMousedown}
+                    onMouseup={this.handleonMouseup}
+                    onMouseover={this.handleonMouseover}
+                    onElementMounted={this.updateElementSizeMeta}
+                    onElementUnMounted={this.removeElementSizeMeta}
+                  />
+                )
+              })}
+            </div>
+          </div>
+          {this.isXOverflowed && (
+            <VerticalScroll
+              columns={columns}
+              firstColumnInViewport={this.firstColumnInViewport}
+              lastColumnInViewport={this.lastColumnInViewport}
+            />
+          )}
+        </div>
+        <HightLighter coord={this.coords} tableRef={scrollContainer} />
+        {this.isOverflowed && (
+          <Scroll
+            class="table-scroll"
+            value={this.value}
+            lastRowInViewport={this.lastRowInViewport}
+            firstRowInViewport={this.firstRowInViewport}
+          />
+        )}
       </div>
 
     )
@@ -252,23 +307,37 @@ export default {
   border-left: 1px solid #ccc;
   z-index: 10;
   user-select: none;
-  /deep/ .th {
-    display: grid;
-    .td {
-      border-top-width: 0;
-      border-left-width: 0;
-      border-right: 1px solid #ccc;
-      border-bottom: 1px solid #ccc;
-      height: 22px;
-      empty-cells: show;
-      line-height: 21px;
-      padding: 0 4px;
-      vertical-align: top;
+  height: 100%;
+  display: flex;
+  .table-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    .table-body {
+      height: 100%;
       overflow: hidden;
-      outline-width: 0;
-      white-space: pre-line;
-      background-clip: padding-box;
     }
+    /deep/ .th {
+      display: grid;
+      .td {
+        border-top-width: 0;
+        border-left-width: 0;
+        border-right: 1px solid #ccc;
+        border-bottom: 1px solid #ccc;
+        height: 22px;
+        empty-cells: show;
+        line-height: 21px;
+        padding: 0 4px;
+        vertical-align: top;
+        overflow: hidden;
+        outline-width: 0;
+        background-clip: padding-box;
+      }
+    }
+  }
+  .table-scroll {
+    width: 20px;
   }
 }
 </style>

@@ -16,20 +16,33 @@ export default {
       type: Array,
       default: () => []
     },
+    slicedColumns: {
+      type: Array,
+      default: () => []
+    },
     data: {
       type: Object,
       default: () => ({})
     },
+    elementHeight: {
+      type: Number,
+      default: undefined
+    }
   },
   computed: {
     normalizedColumnData () {
-      const { data, columns } = this
-      return columns.map(({ source }) => {
+      const { elementHeight, data, columns, slicedColumns } = this
+      return (elementHeight ? slicedColumns : columns).map(({ source }) => {
         return get(source, data)
       })
     }
   },
-
+  mounted () {
+    this.$emit('elementMounted', this.$el.clientHeight, this.rowIndex)
+  },
+  beforeDestroy () {
+    this.$emit('elementUnMounted', this.rowIndex)
+  },
   methods: {
     handleSelect (rowIndex, index) {
       return (e) => {
@@ -46,7 +59,7 @@ export default {
           onMousedown={this.handleSelect(this.rowIndex, index)}
           onMouseup={this.handleSelect(this.rowIndex, index)}
           onMouseover={this.handleSelect(this.rowIndex, index)}
-        >{val} {`${this.rowIndex}, ${index}`}</div>)}
+        >{val}</div>)}
       </div>
 
     )
