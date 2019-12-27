@@ -231,6 +231,7 @@ export default {
       <div class="table" ref="table" onWheel={this.handleScroll}>
         <div class="table-container">
           <Header
+            ref="header"
             columns={columns}
             slicedColumns={slicedColumns}
             startColumnIndex={startColumnIndex}

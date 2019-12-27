@@ -168,7 +168,7 @@ export default {
     calcHorizontalScrollState (newValue, prevValue) {
       const {
         firstColumnInViewport, startColumnIndex, columnsWidth, halfOffset, horizontalScrollShift,
-        containerWidthWithOffset, lastColumnInViewport
+        containerWidthWithOffset, lastColumnInViewport, containerWidth
       } = this
       const nextScroll = newValue + prevValue
       if (startColumnIndex === 0 && nextScroll < halfOffset) {
@@ -178,11 +178,14 @@ export default {
       } else {
         let elementScrollSumm = 0
         let tempElementScrollSumm = 0
+        // console.log(columnsWidth.size, columnsWidth.size - this.lastColumnInViewport)
+        const maxFirstColumn = columnsWidth.size - this.lastColumnInViewport + this.firstColumnInViewport
+        // console.log(maxFirstColumn, this.firstColumnInViewport, this.lastColumnInViewport)
         if (newValue > 0) {
-          for (let i = firstColumnInViewport; i < columnsWidth.size; i++) {
+          for (let i = firstColumnInViewport; i < maxFirstColumn; i++) {
             tempElementScrollSumm += columnsWidth.get(i)
-            if (newValue <= tempElementScrollSumm) {
-              this.firstColumnInViewport = i + 1
+            if (newValue <= elementScrollSumm) {
+              this.firstColumnInViewport = i
               break
             }
             elementScrollSumm = tempElementScrollSumm
@@ -201,42 +204,39 @@ export default {
         let firstElementScrollOffset = 0
         let j = this.firstColumnInViewport === 0 ? 0 : this.firstColumnInViewport - 1
         for (j; j >= 0; j--) {
-          console.log(halfOffset, firstElementScrollOffset, j)
+          firstElementScrollOffset += columnsWidth.get(j)
           if (halfOffset <= firstElementScrollOffset || j === 0) {
             this.startColumnIndex = j
             // console.log(j, firstElementScrollOffset, horizontalScrollShift, firstElementScrollOffset + horizontalScrollShift)
-            this.horizontalScroll = -(firstElementScrollOffset + horizontalScrollShift)
-            console.log(this.horizontalScroll)
+            this.horizontalScroll = firstElementScrollOffset + horizontalScrollShift
             break
           }
-          firstElementScrollOffset += columnsWidth.get(j)
-        }
-        const rightViewPosition = containerWidthWithOffset - halfOffset
-        let _elementScrollSumm = 0
-        let lastCov = false
-        let i = firstColumnInViewport
-        for (i; i < columnsWidth.size; i++) {
-          _elementScrollSumm += columnsWidth.get(i)
-          console.log(_elementScrollSumm, i)
-          if (rightViewPosition <= _elementScrollSumm && !lastCov) {
-            this.lastColumnInViewport = i + 1
-            lastCov = true
-          }
-          if (containerWidthWithOffset <= _elementScrollSumm) {
-            this.renderedColumnsCount = i + 1
-            break
-          }
-        }
-        if (i === columnsWidth.size) {
-          this.lastColumnInViewport = lastColumnInViewport > columnsWidth.size ? columnsWidth.size : lastColumnInViewport
-          this.renderedColumnsCount = columnsWidth.size
         }
       }
+      let _elementScrollSumm = 0
+      let lastCov = false
+      let i = firstColumnInViewport
+      for (i; i < columnsWidth.size; i++) {
+        _elementScrollSumm += columnsWidth.get(i)
+        if (containerWidth <= _elementScrollSumm && !lastCov) {
+          this.lastColumnInViewport = i + 1
+          lastCov = true
+        }
+        if (containerWidthWithOffset <= _elementScrollSumm) {
+          this.renderedColumnsCount = i + 1
+          break
+        }
+      }
+      if (i === columnsWidth.size) {
+        this.lastColumnInViewport = lastCov ? columnsWidth.size - 1 : lastColumnInViewport
+        this.renderedColumnsCount = columnsWidth.size
+      }
+      console.log(this.startColumnIndex, this.firstColumnInViewport, this.lastColumnInViewport, this.renderedColumnsCount)
     },
     updatedTableSizes () {
       const { dataContainer } = this.$refs
-      const { bottom } = dataContainer.getBoundingClientRect()
-      this.dataContainerState = { bottom, height: dataContainer.clientHeight }
+      const { bottom, right } = dataContainer.getBoundingClientRect()
+      this.dataContainerState = { bottom, right, height: dataContainer.clientHeight }
     },
     handleScroll (e) {
       e.preventDefault()
@@ -250,11 +250,16 @@ export default {
           this.calcPosition(this.containerScroll - 30 < 0 ? -this.containerScroll : -30)
         }
       } else {
-        const { firstColumnInViewport, columns, columnsWidth } = this
+        const { firstColumnInViewport, lastColumnInViewport, columns, columnsWidth } = this
         this.calcHorizontalScrollState((() => {
           if (e.deltaY > 0) {
-            const nextColumnValue = firstColumnInViewport + 1
-            return columns.length > nextColumnValue ? columnsWidth.get(nextColumnValue) : 0
+            const { $refs: { header: { $children } }, dataContainerState: { right } } = this
+            const nextColumnValue = lastColumnInViewport + 1
+            console.log()
+            return columns.length >= nextColumnValue ? columnsWidth.get(nextColumnValue) : $children[$children.length - 1].$el.getBoundingClientRect().right - right
+            // ? columns.length - 1 === nextColumnValue
+            //   ? $children[$children.length - 1].$el.getBoundingClientRect().right - right
+            //   : columnsWidth.get(nextColumnValue) : 0
           } else {
             const nextColumnValue = firstColumnInViewport - 1
             return nextColumnValue >= 0 ? -columnsWidth.get(nextColumnValue) : 0
