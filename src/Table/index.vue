@@ -15,6 +15,10 @@ export default {
     Header
   },
   props: {
+    settings: {
+      type: Object,
+      default: () => ({})
+    },
     columns: {
       type: Array,
       default: () => []
@@ -26,6 +30,7 @@ export default {
   },
   data () {
     return {
+      tableHeight: 0,
       sort: undefined,
       coords: undefined,
       activeSelection: false
@@ -37,10 +42,10 @@ export default {
     },
     normalizedData () {
       const { value, sort: { source, direction } = {} } = this
-      if (!source) return value
+      // if (!source) return value
       const normalizedDiretion = direction === ASC ? -1 : 1
       const newArray = Array.from(value)
-      return newArray.sort((first, second) => {
+      newArray.sort((first, second) => {
         const nFirst = get(source, first)
         const nSecond = get(source, second)
         if (nFirst > nSecond) {
@@ -52,13 +57,19 @@ export default {
         // a должно быть равным b
         return 0
       })
+      return newArray
     }
   },
   beforeMount () {
+    window.addEventListener('resize', this.updateSizes)
     document.addEventListener('keyup', this.closeNewDocumentList)
     document.addEventListener('paste', this.handlePaste)
   },
+  mounted () {
+    this.updateSizes()
+  },
   beforeDestroy () {
+    window.removeEventListener('resize', this.updateSizes)
     document.removeEventListener('keyup', this.closeNewDocumentList)
     document.removeEventListener('paste', this.handlePaste)
   },
@@ -199,9 +210,13 @@ export default {
             break
         }
       }
-    }
+    },
+    updateSizes () {
+      const { table: { clientHeight } } = this.$refs
+      console.log(clientHeight, this.$refs.table)
+      this.tableHeight = clientHeight
+    },
   },
-
   render (h) {
     const { normalizedData, columns, rowStyles, $refs: { table } } = this
     return (
