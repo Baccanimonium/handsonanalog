@@ -179,31 +179,35 @@ export default {
           this.firstColumnInViewport += columnShift
           this.renderedColumnsCount += columnShift
         } else {
-          let elementScrollSumm = 0
-          let tempElementScrollSumm = 0
+          let elementScrollSumm = this.horizontalScrollShift + newValue
           // console.log(columnsWidth.size, columnsWidth.size - this.lastColumnInViewport)
           const maxFirstColumn = columnsWidth.size - this.lastColumnInViewport + this.firstColumnInViewport
           // console.log(maxFirstColumn, this.firstColumnInViewport, this.lastColumnInViewport)
           if (newValue > 0) {
             for (let i = firstColumnInViewport; i <= maxFirstColumn; i++) {
-              tempElementScrollSumm += columnsWidth.get(i)
-              if (newValue <= elementScrollSumm || i === maxFirstColumn) {
+              const elementWidth = columnsWidth.get(i)
+              if (elementScrollSumm === elementWidth) {
+                this.firstColumnInViewport = i + 1
+                this.horizontalScrollShift = 0
+                break
+              } else if (elementScrollSumm < elementWidth || i === maxFirstColumn) {
                 this.firstColumnInViewport = i
+                this.horizontalScrollShift = elementScrollSumm
                 break
               }
-              elementScrollSumm = tempElementScrollSumm
+              elementScrollSumm -= elementWidth
             }
-            console.log(this.horizontalScrollShift, (newValue - (tempElementScrollSumm - elementScrollSumm)))
-            this.horizontalScrollShift = this.horizontalScrollShift + (newValue - (tempElementScrollSumm - elementScrollSumm))
           } else {
-            for (let i = firstColumnInViewport - 1; i >= 0; i--) {
+            // скроллим сразу следующий, если текущий имеет скролл то скроллим его
+            for (let i = this.horizontalScrollShift ? firstColumnInViewport - 1 : firstColumnInViewport; i >= 0; i--) {
               elementScrollSumm -= columnsWidth.get(i)
-              if (newValue >= elementScrollSumm || i === 0) {
+              if (elementScrollSumm <= 0 || i === 0) {
                 this.firstColumnInViewport = i
+                this.horizontalScrollShift = elementScrollSumm
                 break
               }
             }
-            this.horizontalScrollShift = this.horizontalScrollShift + newValue - elementScrollSumm
+            // this.horizontalScrollShift = newValue - elementScrollSumm
           }
           let firstElementScrollOffset = 0
           let j = this.firstColumnInViewport === 0 ? 0 : this.firstColumnInViewport - 1

@@ -35,9 +35,9 @@ export default {
       return result < 10 ? 10 : result
     },
     railStyles () {
-      const scrollPosition = this.firstColumnInViewport / (
-        this.columns.length - 1 - this.lastColumnInViewport + this.firstColumnInViewport
-      )
+      const scrollPosition = this.firstColumnInViewport /
+        (this.columns.length - this.lastColumnInViewport + this.firstColumnInViewport)
+      console.log(this.firstColumnInViewport, scrollPosition)
       // console.log(scrollPosition, this.firstColumnInViewport, this.lastColumnInViewport, -this.lastColumnInViewport + this.firstColumnInViewport)
       return {
         width: `${this.railWidth}px`,
