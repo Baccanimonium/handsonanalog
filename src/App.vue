@@ -39,11 +39,11 @@ export default {
         })()
       ],
       data: (() => {
-        const res = Array(50)
-        for (let i = 0; i < 50; i++) {
+        const res = Array(100)
+        for (let i = 0; i < 100; i++) {
           const g = (() => {
             const res = {}
-            for (let j = 0; j < 50; j++) {
+            for (let j = 0; j < 60; j++) {
               res[j] = j * i
             }
             return res
