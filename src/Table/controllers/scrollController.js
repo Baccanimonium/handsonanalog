@@ -178,6 +178,8 @@ export default {
           this.horizontalScroll = nextScroll
           this.firstColumnInViewport += columnShift
           this.renderedColumnsCount += columnShift
+          this.horizontalScrollShift = 0
+          // console.log(222222, this.horizontalScroll, this.firstColumnInViewport, this.startColumnIndex)
         } else {
           let elementScrollSumm = this.horizontalScrollShift + newValue
           // console.log(columnsWidth.size, columnsWidth.size - this.lastColumnInViewport)
@@ -199,13 +201,20 @@ export default {
             }
           } else {
             // скроллим сразу следующий, если текущий имеет скролл то скроллим его
-            for (let i = this.horizontalScrollShift ? firstColumnInViewport - 1 : firstColumnInViewport; i >= 0; i--) {
-              elementScrollSumm -= columnsWidth.get(i)
-              if (elementScrollSumm <= 0 || i === 0) {
+            let i = firstColumnInViewport - 1
+            i = i > 0 ? i : 0
+            for (i; i >= 0; i--) {
+              elementScrollSumm = elementScrollSumm += columnsWidth.get(i)
+              if (elementScrollSumm >= 0) {
                 this.firstColumnInViewport = i
                 this.horizontalScrollShift = elementScrollSumm
                 break
+              } else if (i === 0) {
+                this.firstColumnInViewport = 0
+                this.horizontalScrollShift = 0
+                break
               }
+              // elementScrollSumm = _elementScrollSumm
             }
             // this.horizontalScrollShift = newValue - elementScrollSumm
           }
@@ -220,7 +229,27 @@ export default {
               break
             }
           }
+          // console.log(this.startColumnIndex, this.firstColumnInViewport, this.columns[this.firstColumnInViewport].label)
         }
+        // let _elementScrollSumm = containerWidth + this.horizontalScrollShift
+        // let _containerWidthWithOffset = _elementScrollSumm + this.halfOffset
+        // let lastCov = false
+        // let i = firstColumnInViewport
+        // for (i; i < columnsWidth.size; i++) {
+        //   const elementWidth = columnsWidth.get(i)
+        //   if (_elementScrollSumm < elementWidth && !lastCov) {
+        //     this.lastColumnInViewport = i
+        //     // console.log(i, containerWidth, _elementScrollSumm,  this.columns[this.lastColumnInViewport] && this.columns[this.lastColumnInViewport].label,)
+        //     lastCov = true
+        //   }
+        //   if (_containerWidthWithOffset <= elementWidth) {
+        //     // + 1 потому что отвечает не за index а за номер элемента
+        //     this.renderedColumnsCount = i + 1
+        //     break
+        //   }
+        //   _elementScrollSumm -= elementWidth
+        //   _containerWidthWithOffset -= elementWidth
+        // }
         let _elementScrollSumm = 0
         let lastCov = false
         let i = firstColumnInViewport
@@ -242,6 +271,12 @@ export default {
           this.renderedColumnsCount = columnsWidth.size
         }
       }
+      console.log(
+        this.firstColumnInViewport,
+        this.columns[this.firstColumnInViewport].label,
+        this.lastColumnInViewport,
+        this.renderedColumnsCount
+      )
       // console.log(newValue,this.firstColumnInViewport)
       // console.log(this.startColumnIndex, this.firstColumnInViewport, this.lastColumnInViewport, this.renderedColumnsCount)
     },
@@ -263,7 +298,7 @@ export default {
         }
       } else {
         const { firstColumnInViewport, lastColumnInViewport, columns, columnsWidth } = this
-        const { $refs: { header: { $children } }, dataContainerState: { right, left } } = this
+        const { $refs: { header: { $children, $el } }, dataContainerState: { right, left } } = this
         this.calcHorizontalScrollState((() => {
           if (e.deltaY > 0) {
             const nextColumnValue = lastColumnInViewport + 1
@@ -272,7 +307,9 @@ export default {
               : $children[$children.length - 1].$el.getBoundingClientRect().right - right
           } else {
             const nextColumnValue = firstColumnInViewport - 1
-            return nextColumnValue > 0 ? -columnsWidth.get(nextColumnValue) : $children[$children.length - 1].$el.getBoundingClientRect().left - left
+            return nextColumnValue > 0
+              ? -columnsWidth.get(nextColumnValue)
+              : $el.children[0].getBoundingClientRect().left - left
           }
         })(), this.horizontalScroll)
       }
