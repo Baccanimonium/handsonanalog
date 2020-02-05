@@ -65,8 +65,12 @@ export default {
 <style lang="scss" scoped>
   .table-horizontal-scroll {
     height: 4px;
-    position: relative;
+    position: absolute;
     width: 100%;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
     .scroll-rail {
       border-radius: 4px;
       z-index: 2;
@@ -76,7 +80,7 @@ export default {
       bottom: 1px;
       background-color: gray;
       transition-property: left, transform;
-      transition-duration: 150ms;
+      transition-duration: 50ms;
       transition-timing-function: linear;
       &:hover {
         transform: scale(2);

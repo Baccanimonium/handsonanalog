@@ -39,8 +39,8 @@ export default {
         })()
       ],
       data: (() => {
-        const res = Array(100)
-        for (let i = 0; i < 100; i++) {
+        const res = Array(65)
+        for (let i = 0; i < 65; i++) {
           const g = (() => {
             const res = {}
             for (let j = 0; j < 60; j++) {

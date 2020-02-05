@@ -77,7 +77,7 @@ export default {
       return newArray
     },
     normalizedData () {
-      return this.sortedData.slice(this.startViewedRangeIndex, this.firstRowInViewport + this.renderedElementCount)
+      return this.sortedData.slice(this.startRowIndex, this.firstRowInViewport + this.renderedElementCount)
     }
   },
   beforeMount () {
@@ -259,7 +259,7 @@ export default {
           <div class="table-body" ref="dataContainer">
             <div style={this.containerStyles} ref="scrollContainer">
               {normalizedData.map((rowData, index) => {
-                const key = index + this.startViewedRangeIndex
+                const key = index + this.startRowIndex
                 return (
                   <Row
                     key={key}
@@ -320,6 +320,7 @@ export default {
     .table-body {
       height: 100%;
       overflow: hidden;
+      background-color: black;
     }
     /deep/ .th {
       display: grid;
