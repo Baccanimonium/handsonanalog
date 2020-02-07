@@ -29,14 +29,45 @@ const forwardFunctions = {
     }
   },
   calcLastRowIndex (i, elementHeight, result) {
-    this.lastRowInViewport = i
-    result.calculations = result.calculations - this.dataContainerState.height
-    this.lastElementScroll = result.calculations
-    result.executor = forwardFunctions.calcEndScrollState
-    forwardFunctions.calcEndScrollState.apply(this, arguments)
+    if (this.calculations >= this.dataContainerState.height) {
+      this.lastRowInViewport = i
+      result.calculations = result.calculations - this.dataContainerState.height
+      this.lastElementScroll = result.calculations
+      result.executor = forwardFunctions.calcEndScrollState
+      forwardFunctions.calcEndScrollState.apply(this, arguments)
+    }
   },
   calcEndScrollState (i, elementHeight, result) {
     this.containerOverScroll = result.calculations
+  }
+}
+
+const backWardFunctions = {
+  calcLastRowIndex (i, elementHeight, result) {
+    if (result.calculations > result.eventScrollValue) {
+      this.lastRowInViewport = i
+      result.calculations = result.calculations - this.eventScrollValue
+      this.lastElementScroll = result.calculations
+      result.executor = backWardFunctions.calcFirstRowIndex
+      backWardFunctions.calcFirstRowIndex.apply(this, arguments)
+    }
+  },
+  calcFirstRowIndex (i, elementHeight, result) {
+    if (result.calculations >= this.dataContainerState.height) {
+      this.firstRowInViewport = i
+      result.calculations = result.calculations - this.dataContainerState.height
+      this.nextElementScroll = result.calculations
+      result.executor = backWardFunctions.calcStartIndex
+      backWardFunctions.calcStartIndex.apply(this, arguments)
+    }
+  },
+  calcStartIndex (i, elementHeight, result) {
+    console.log(result.calculations, this.halfOffset, result.calculations > this.halfOffset)
+    if (result.calculations > this.halfOffset) {
+      this.startRowIndex = i
+      this.nextContainerScroll = this.calculations
+      result.executor = () => null
+    }
   }
 }
 
@@ -134,7 +165,6 @@ export default {
   },
   methods: {
     calcPosition (newValue) {
-      // console.log(newValue)
       if (newValue !== 0) {
         const result = {
           eventScrollValue: Math.abs(newValue),
@@ -205,40 +235,41 @@ export default {
             result.executor(i, this.elementSizes.get(i))
           }
         } else {
-          result.executor = function (i, elementHeight) {
-            this.calculations += elementHeight || 0
-            if (!this.lastRowInViewport) {
-              if (this.calculations > this.eventScrollValue) {
-              console.log(i)
-                this.lastRowInViewport = i
-                this.calculations = this.calculations - this.eventScrollValue
-                this.lastElementScroll = this.calculations
-                this.executor(i, 0)
-              }
-            } else if (!this.firstRowInViewport) {
-              if (this.calculations >= this.viewPortHeight) {
-                this.firstRowInViewport = i
-                this.calculations = this.calculations - this.viewPortHeight
-                this.nextElementScroll = this.calculations
-                this.executor(i, 0)
-              }
-            } else if (!this.startRowIndex) {
-              // this.startRowIndex = i
-              this.nextContainerScroll = this.calculations
-            }
-          }
+          // result.executor = function (i, elementHeight) {
+          //   this.calculations += elementHeight || 0
+          //   if (!this.lastRowInViewport) {
+          //     if (this.calculations > this.eventScrollValue) {
+          //       this.lastRowInViewport = i
+          //       this.calculations = this.calculations - this.eventScrollValue
+          //       this.lastElementScroll = this.calculations
+          //       this.executor(i, 0)
+          //     }
+          //   } else if (!this.firstRowInViewport) {
+          //     if (this.calculations >= this.viewPortHeight) {
+          //       this.firstRowInViewport = i
+          //       this.calculations = this.calculations - this.viewPortHeight
+          //       this.nextElementScroll = this.calculations
+          //       this.executor(i, 0)
+          //     }
+          //   } else if (!this.startRowIndex) {
+          //     // this.startRowIndex = i
+          //     this.nextContainerScroll = this.calculations
+          //   }
+          // }
+          result.executor = backWardFunctions.calcLastRowIndex
           result.calculations = -this.lastElementScroll
           let i = this.lastRowInViewport
           for (i; i >= this.startRowIndex; i--) {
-            result.executor(i, this.elementSizes.get(i))
+            result.executor.apply([i, this.elementSizes.get(i), result])
           }
         }
         // if (newValue < 0) {
         //   debugger
         // }
         // console.log(result)
+
         this.startRowIndex = result.startRowIndex !== undefined ? result.startRowIndex : this.startRowIndex
-        this.firstRowInViewport = result.firstRowInViewport
+        this.firstRowInViewport = result.firstRowInViewport !== undefined ? result.firstRowInViewport : 0
         this.lastRowInViewport = result.lastRowInViewport
         this.endRowIndex = result.endRowIndex !== undefined ? result.endRowIndex : this.value.length - 1
         this.elementScroll = result.nextElementScroll
