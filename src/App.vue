@@ -67,6 +67,9 @@ export default {
     flex-direction: column;
     overflow: hidden;
   }
+  * {
+    box-sizing: border-box;
+  }
 #app {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;

@@ -242,68 +242,75 @@ export default {
       elementSizes
     } = this
     return (
-      <div class="table" ref="table" onWheel={this.handleScroll}>
-        <div class="table-container">
-          <Header
-            ref="header"
-            columns={columns}
-            slicedColumns={slicedColumns}
-            startColumnIndex={startColumnIndex}
-            rowStyles={rowStyles}
-            offsets={offsets}
-            onSort={this.handleSort}
-            onInstaciated={this.handleVerticalContainerInstaciate}
-            handleElementMounted={this.onHorizontalElementMounted}
-            handleElementUnMounted={this.onHorizontalElementUnMounted}
-          />
-          <div class="table-body" ref="dataContainer">
-            <div style={this.containerStyles} ref="scrollContainer">
-              {normalizedData.map((rowData, index) => {
-                const key = index + this.startRowIndex
-                return (
-                  <Row
-                    key={key}
-                    data={rowData}
-                    slicedColumns={slicedColumns}
-                    columns={columns}
-                    rowStyles={rowStyles}
-                    rowIndex={key}
-                    elementHeight={elementSizes.get(key)}
-                    onMousedown={this.handleonMousedown}
-                    onMouseup={this.handleonMouseup}
-                    onMouseover={this.handleonMouseover}
-                    onElementMounted={this.updateElementSizeMeta}
-                    onElementUnMounted={this.removeElementSizeMeta}
-                  />
-                )
-              })}
-            </div>
-          </div>
-          {this.isXOverflowed && (
-            <VerticalScroll
+      <div class="grid-container">
+        <div class="table" ref="table" onWheel={this.handleScroll}>
+          <div class="table-container">
+            <Header
+              ref="header"
               columns={columns}
-              firstColumnInViewport={this.firstColumnInViewport}
-              lastColumnInViewport={this.lastColumnInViewport}
+              slicedColumns={slicedColumns}
+              startColumnIndex={startColumnIndex}
+              rowStyles={rowStyles}
+              offsets={offsets}
+              onSort={this.handleSort}
+              onInstaciated={this.handleVerticalContainerInstaciate}
+              handleElementMounted={this.onHorizontalElementMounted}
+              handleElementUnMounted={this.onHorizontalElementUnMounted}
+            />
+            <div class="table-body" ref="dataContainer">
+              <div style={this.containerStyles} ref="scrollContainer">
+                {normalizedData.map((rowData, index) => {
+                  const key = index + this.startRowIndex
+                  return (
+                    <Row
+                      key={key}
+                      data={rowData}
+                      slicedColumns={slicedColumns}
+                      columns={columns}
+                      rowStyles={rowStyles}
+                      rowIndex={key}
+                      elementHeight={elementSizes.get(key)}
+                      onMousedown={this.handleonMousedown}
+                      onMouseup={this.handleonMouseup}
+                      onMouseover={this.handleonMouseover}
+                      onElementMounted={this.updateElementSizeMeta}
+                      onElementUnMounted={this.removeElementSizeMeta}
+                    />
+                  )
+                })}
+              </div>
+            </div>
+            {this.isXOverflowed && (
+              <VerticalScroll
+                columns={columns}
+                firstColumnInViewport={this.firstColumnInViewport}
+                lastColumnInViewport={this.lastColumnInViewport}
+              />
+            )}
+          </div>
+          <HightLighter coord={this.coords} tableRef={scrollContainer} />
+          {this.isOverflowed && (
+            <Scroll
+              class="table-scroll"
+              value={this.value}
+              lastRowInViewport={this.lastRowInViewport}
+              firstRowInViewport={this.firstRowInViewport}
             />
           )}
         </div>
-        <HightLighter coord={this.coords} tableRef={scrollContainer} />
-        {this.isOverflowed && (
-          <Scroll
-            class="table-scroll"
-            value={this.value}
-            lastRowInViewport={this.lastRowInViewport}
-            firstRowInViewport={this.firstRowInViewport}
-          />
-        )}
       </div>
-
     )
   }
 }
 </script>
 
 <style lang="scss" scoped>
+  .grid-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
 .table {
   position: relative;
   border-top: 1px solid #ccc;
@@ -329,7 +336,7 @@ export default {
         border-left-width: 0;
         border-right: 1px solid #ccc;
         border-bottom: 1px solid #ccc;
-        height: 22px;
+        height: 23px;
         empty-cells: show;
         line-height: 21px;
         padding: 0 4px;
