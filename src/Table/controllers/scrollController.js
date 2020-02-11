@@ -1,3 +1,21 @@
+function findElementByScroll (limit, elementMap, defaultSize) {
+  let i = 0
+  let acc = 0
+  for (i; acc < limit; i++) {
+    acc += (elementMap.get(i) || defaultSize)
+  }
+  return i - 1
+}
+
+const defaultContainer = {
+
+}
+
+const getResultContainer = (initialObject = {}) => ({
+  ...defaultContainer,
+  ...initialObject
+})
+
 const forwardFunctions = {
   calcStartIndex (i, elementHeight, result) {
     if (this.containerScroll > this.halfOffset) {
@@ -96,7 +114,7 @@ const forwardFunctions = {
 const backWardFunctions = {
   calcLastRowIndex (i, elementHeight, result) {
     if (result.calculations > result.eventScrollValue) {
-      console.log(this.lastRowInViewport, i, result.calculations, result.eventScrollValue)
+      // console.log(this.lastRowInViewport, i, result.calculations, result.eventScrollValue)
       // debugger
       this.lastRowInViewport = i
       result.calculations = result.calculations - result.eventScrollValue
@@ -148,7 +166,6 @@ export default {
       lastElementScroll: 0,
       containerScroll: 0,
       containerOverScroll: 0,
-      renderedElementCount: 1,
       firstRowInViewport: 0,
       startRowIndex: 0,
       lastRowInViewport: 0,
@@ -168,8 +185,19 @@ export default {
       const { normalizedSettings: { columnWidth } } = this
       return new Map(this.columns.map((item, i) => [i, columnWidth]))
     },
+    columnWidthSum () {
+      const { normalizedSettings: { columnWidth } } = this
+      return this.columns.reduce((acc, item) => acc + columnWidth, 0)
+    },
+    rowHeightSum () {
+      let result = 0
+      this.elementSizes.forEach((v) => {
+        result += v
+      })
+      return result
+    },
     isOverflowed () {
-      return this.renderedElementCount < this.value.length - 1
+      return this.endRowIndex !== this.lastRowInViewport || this.startRowIndex !== this.firstRowInViewport
     },
     isXOverflowed () {
       return this.startRowIndex < this.columns.length - 1
@@ -198,9 +226,13 @@ export default {
   watch: {
     verticalItemsRef (newValue) {
       this.containerWidth = newValue.clientWidth
+    },
+    value () {
+      this.setColumnSizes()
     }
   },
   mounted () {
+    this.setColumnSizes()
     this.updatedTableSizes()
     const verticalInterval = setInterval(() => {
       if (this.overflowedContainerHeight > this.renderedElementHeight && this.endRowIndex <= this.value.length) {
@@ -223,6 +255,36 @@ export default {
     })
   },
   methods: {
+    setColumnSizes () {
+      const { defaultRowHeight } = this.settings
+      let dummyArray = Array(this.value.length)
+      for (let i = 0; i < dummyArray.length; i++) {
+        dummyArray[i] = [i, defaultRowHeight]
+      }
+      this.elementSizes = new Map(dummyArray)
+    },
+    scrollToElement ({ lastColumnIndex, firstColumnIndex, lastRowIndex, firstRowIndex }) {
+      //TODO: писать от сюда
+    },
+    scrollTo ({ lastColumnIndex, firstColumnIndex, lastRowIndex, firstRowIndex }) {
+      if (lastColumnIndex) {
+        const interpolatedScroll = this.columnWidthSum * lastColumnIndex
+        let i = 0
+        const limit = this.value.length
+        let acc = 0
+        for (i; i < limit; i++) {
+          acc += this.columnsWidth.get(i)
+        }
+      } else if (firstColumnIndex) {
+
+      }
+      if (lastRowIndex) {
+        const interpolatedScroll = this.rowHeightSum * lastRowIndex
+        const elementIndex = findElementByScroll(interpolatedScroll, this.elementSizes, this.rowHeightSum / this.value.length)
+      } else if (firstRowIndex) {
+
+      }
+    },
     calcPosition (newValue) {
       // console.log(newValue)
       if (newValue !== 0) {
@@ -349,10 +411,7 @@ export default {
     },
     calcHorizontalScrollState (newValue, prevValue) {
       if (newValue !== 0) {
-        // console.log(newValue)
-        const {
-          firstColumnInViewport, startColumnIndex, columnsWidth, halfOffset, containerWidth
-        } = this
+        const { firstColumnInViewport, startColumnIndex, columnsWidth, halfOffset, containerWidth } = this
         const nextScroll = newValue + prevValue
         // просчет оффсетов
         if (startColumnIndex === 0 && nextScroll < halfOffset) {
@@ -361,11 +420,8 @@ export default {
           this.firstColumnInViewport += columnShift
           this.renderedColumnsCount += columnShift
           this.horizontalScrollShift = 0
-          // console.log(222222, this.horizontalScroll, this.firstColumnInViewport, this.startColumnIndex)
         } else {
           let elementScrollSumm = this.horizontalScrollShift + newValue
-          // console.log(columnsWidth.size, columnsWidth.size - this.lastColumnInViewport)
-          // console.log(maxFirstColumn, this.firstColumnInViewport, this.lastColumnInViewport)
           if (newValue > 0) {
             // просчет скролла вперед
             const maxFirstColumn = columnsWidth.size - 1 - this.lastColumnInViewport + this.firstColumnInViewport
@@ -398,9 +454,7 @@ export default {
                 this.horizontalScrollShift = 0
                 break
               }
-              // elementScrollSumm = _elementScrollSumm
             }
-            // this.horizontalScrollShift = newValue - elementScrollSumm
           }
           let firstElementScrollOffset = 0
           let j = this.firstColumnInViewport === 0 ? 0 : this.firstColumnInViewport - 1
@@ -408,15 +462,12 @@ export default {
             firstElementScrollOffset += columnsWidth.get(j)
             if (halfOffset <= firstElementScrollOffset || j === 0) {
               this.startColumnIndex = j
-              // console.log(j, firstElementScrollOffset, horizontalScrollShift, firstElementScrollOffset + horizontalScrollShift)
               this.horizontalScroll = firstElementScrollOffset + this.horizontalScrollShift
               break
             }
           }
-          // console.log(this.startColumnIndex, this.firstColumnInViewport, this.columns[this.firstColumnInViewport].label)
         }
         let _elementScrollSumm = containerWidth + this.horizontalScrollShift
-        // let _elementScrollSumm = containerWidth + this.horizontalScrollShift
         let _containerWidthWithOffset = _elementScrollSumm + this.halfOffset
         let lastCov = false
         let i = this.firstColumnInViewport
@@ -426,7 +477,6 @@ export default {
           _containerWidthWithOffset -= elementWidth
           if (_elementScrollSumm <= 0 && !lastCov) {
             this.lastColumnInViewport = i
-            // console.log(i, containerWidth, _elementScrollSumm,  this.columns[this.lastColumnInViewport] && this.columns[this.lastColumnInViewport].label,)
             lastCov = true
           }
           if (_containerWidthWithOffset <= 0) {
@@ -435,38 +485,7 @@ export default {
             break
           }
         }
-        // let _elementScrollSumm = 0
-        // let lastCov = false
-        // let i = firstColumnInViewport
-        // for (i; i < columnsWidth.size; i++) {
-        //   _elementScrollSumm += columnsWidth.get(i)
-        //   if (containerWidth <= _elementScrollSumm && !lastCov) {
-        //     this.lastColumnInViewport = i + 1
-        //     lastCov = true
-        //   }
-        //   if (containerWidthWithOffset <= _elementScrollSumm) {
-        //     this.renderedColumnsCount = i + 1
-        //     break
-        //   }
-        // }
-        // проверка нужна для того, чтобы в цикле не проверять на невозможность наскроллить оффсет и последний индекс колонок
-        // if (i === columnsWidth.size) {
-        //   if (!lastCov) {
-        //     console.log("bb", _elementScrollSumm, _containerWidthWithOffset)
-        //     this.lastColumnInViewport = columnsWidth.size - 1
-        //   }
-        //   this.renderedColumnsCount = columnsWidth.size
-        // }
       }
-      // console.log(
-      //   this.firstColumnInViewport,
-      //   this.columns[this.firstColumnInViewport].label,
-      //   this.lastColumnInViewport,
-      //   this.columns[this.lastColumnInViewport] && this.columns[this.lastColumnInViewport].label,
-      //   this.renderedColumnsCount
-      // )
-      // console.log(newValue,this.firstColumnInViewport)
-      // console.log(this.startColumnIndex, this.firstColumnInViewport, this.lastColumnInViewport, this.renderedColumnsCount)
     },
     updatedTableSizes () {
       const { dataContainer } = this.$refs
@@ -512,8 +531,6 @@ export default {
     },
     removeElementSizeMeta (elementIndex) {
       this.renderedElementHeight -= this.elementSizes.get(elementIndex)
-      this.elementSizes.delete(elementIndex)
-      this.elementSizes = new Map(this.elementSizes)
     },
     handleVerticalContainerInstaciate (instance) {
       this.verticalItemsRef = instance

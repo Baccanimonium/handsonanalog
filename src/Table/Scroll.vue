@@ -1,5 +1,8 @@
 <template>
-  <div class="table-scroll">
+  <div
+    class="table-scroll"
+    @click="scrollTo"
+  >
     <div
       class="scroll-rail"
       :style="railStyles"
@@ -33,11 +36,13 @@ export default {
     railHeight () {
       return (this.containerHeight / this.value.length).toFixed(2)
     },
+    scrollPosition () {
+      return this.firstRowInViewport / (this.value.length - 1 - this.lastRowInViewport + this.firstRowInViewport)
+    },
     railStyles () {
-      const scrollPosition = this.firstRowInViewport / (this.value.length - 1 - this.lastRowInViewport + this.firstRowInViewport)
       return {
         height: `${this.railHeight}px`,
-        top: `calc(${scrollPosition * 100}% - ${this.railHeight * scrollPosition}px)`
+        top: `calc(${this.scrollPosition * 100}% - ${this.railHeight * this.scrollPosition}px)`
       }
     }
   },
@@ -45,6 +50,13 @@ export default {
     this.updateContainerSizes()
   },
   methods: {
+    scrollTo ({ y }) {
+      const { bottom, top } = this.$el.getBoundingClientRect()
+      const nextScrollPosition = (y - top) / (bottom - top)
+      this.$emit('scrollTo', nextScrollPosition > this.scrollPosition
+        ? { lastRowIndex: nextScrollPosition }
+        : { firstRowIndex: nextScrollPosition })
+    },
     updateContainerSizes () {
       this.containerHeight = this.$el.clientHeight
     }
@@ -54,10 +66,31 @@ export default {
 
 <style lang="scss" scoped>
  .table-scroll {
-  .scroll-rail {
-    position: relative;
-    width: 100%;
-    background-color: gray;
-  }
+    position: absolute;
+    top: 0;
+    right: 1px;
+    bottom: 0;
+    width: 4px;
+    border-radius: 4px;
+    transition-property: background-color;
+    transition-duration: 250ms;
+    transition-timing-function: linear;
+    &:hover {
+     background-color: #979797;
+     transform: scaleX(2);
+     .scroll-rail {
+       background-color: black;
+     }
+    }
+    .scroll-rail {
+      position: relative;
+      width: 100%;
+      background-color: gray;
+      transition-property: top, transform,background-color;
+      transition-duration: 250ms;
+      transition-timing-function: linear;
+      z-index: 2;
+      border-radius: 4px;
+    }
  }
 </style>

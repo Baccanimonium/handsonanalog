@@ -285,16 +285,17 @@ export default {
                 columns={columns}
                 firstColumnInViewport={this.firstColumnInViewport}
                 lastColumnInViewport={this.lastColumnInViewport}
+                onScrollTo={this.scrollTo}
               />
             )}
           </div>
           <HightLighter coord={this.coords} tableRef={scrollContainer} />
           {this.isOverflowed && (
             <Scroll
-              class="table-scroll"
               value={this.value}
               lastRowInViewport={this.lastRowInViewport}
               firstRowInViewport={this.firstRowInViewport}
+              onScrollTo={this.scrollTo}
             />
           )}
         </div>
@@ -346,9 +347,6 @@ export default {
         background-clip: padding-box;
       }
     }
-  }
-  .table-scroll {
-    width: 20px;
   }
 }
 </style>

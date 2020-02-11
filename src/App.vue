@@ -20,7 +20,9 @@ export default {
   },
   data () {
     return {
-      settings: {},
+      settings: {
+        defaultRowHeight: 23
+      },
       meta: [],
       columns: [
         { source: 'id', label: 'ID', inputComponent: 'input' },
