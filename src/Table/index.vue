@@ -77,7 +77,7 @@ export default {
       return newArray
     },
     normalizedData () {
-      return this.sortedData.slice(this.startRowIndex, this.firstRowInViewport + this.renderedElementCount)
+      return this.sortedData.slice(this.startRowIndex, this.endRowIndex + 1)
     }
   },
   beforeMount () {

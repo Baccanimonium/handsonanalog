@@ -14,17 +14,22 @@ const forwardFunctions = {
         this.startRowIndex = i
         this.elementScroll = elementHeight - (result.calculations - result.eventScrollValue)
         // console.log(this.elementScroll, elementHeight - this.elementScroll)
-        result.calculations = this.elementScroll
+        // console.log(this.containerScroll)
+        this.containerScroll += this.elementScroll
+        result.calculations = elementHeight
         // result.nextScroll = this.halfOffset
-        result.nextScroll = this.containerScroll
         // result.nextScroll = this.halfOffset + this.elementScroll + this.containerScroll - this.halfOffset
         //
+        // if (this.lastRowInViewport === 63) {
+        //   debugger
+        // }
         result.executor = forwardFunctions.calcFirstRowIndex
         forwardFunctions.calcFirstRowIndex.apply(this, arguments)
       }
     } else {
       this.startRowIndex = 0
       this.elementScroll = 0
+      this.containerScroll += result.eventScrollValue
       result.executor = forwardFunctions.calcFirstRowIndex
       forwardFunctions.calcFirstRowIndex.apply(this, arguments)
     }
@@ -33,7 +38,7 @@ const forwardFunctions = {
     // if (this.elementScroll > 0) {
     //   console.log(result.calculations, i, this.containerScroll)
     // }
-    if (result.calculations > result.nextScroll) {
+    if (result.calculations > this.containerScroll) {
       // console.log(i, result.calculations, result.nextScroll)
       // console.log(result.calculations, i)
       //       if (this.startRowIndex > 0) {
@@ -46,16 +51,14 @@ const forwardFunctions = {
       // if (this.startRowIndex > 0) {
       //   debugger
       // }
-      const prevValue = result.calculations - elementHeight
-      debugger
+      // console.log(i, result.calculations, this.containerScroll)
       this.firstRowInViewport = i
       // console.log(
       //   result.calculations
       //   , result.nextScroll + elementHeight - (result.calculations - result.nextScroll))
-      this.containerScroll = result.calculations
-      // TODO: пилитьь эту строку
       // this.containerScroll = result.nextScroll + elementHeight - (prevValue - result.nextScroll)
-      result.calculations = 0
+      // console.log(i,result.calculations,this.containerScroll )
+      result.calculations -= this.containerScroll
       // console.log(result.calculations)
       // console.log(this.startRowIndex, this.firstRowInViewport)
       result.executor = forwardFunctions.calcLastRowIndex
@@ -65,11 +68,11 @@ const forwardFunctions = {
   calcLastRowIndex (i, elementHeight, result) {
     // if (this.lastRowInViewport === 63) {
     // console.log(result.calculations, this.dataContainerState.height, i)
-    //   // console.log()
     // }
     if (result.calculations >= this.dataContainerState.height) {
       // console.log(i,result.calculations,this.dataContainerState.height)
       // console.log(this.lastRowInViewport, i, result.calculations === this.dataContainerState.height)
+      // console.log(i)
       this.lastRowInViewport = i
       // console.log(result.calculations)
       result.calculations = result.calculations - this.dataContainerState.height
@@ -79,7 +82,7 @@ const forwardFunctions = {
     }
   },
   calcEndScrollState (i, elementHeight, result) {
-    if (this.calculations <= this.halfOffset) {
+    if (result.calculations >= this.halfOffset) {
       this.containerOverScroll = result.calculations
       this.endRowIndex = i
     }
@@ -93,7 +96,7 @@ const forwardFunctions = {
 const backWardFunctions = {
   calcLastRowIndex (i, elementHeight, result) {
     if (result.calculations > result.eventScrollValue) {
-      // console.log(this.lastRowInViewport, i)
+      console.log(this.lastRowInViewport, i, result.calculations, result.eventScrollValue)
       // debugger
       this.lastRowInViewport = i
       result.calculations = result.calculations - result.eventScrollValue
@@ -114,7 +117,8 @@ const backWardFunctions = {
     }
   },
   calcStartIndex (i, elementHeight, result) {
-    if (result.calculations > this.halfOffset || i === 0) {
+    // console.log(i, elementHeight,result.calculations, this.halfOffset)
+    if (result.calculations > this.halfOffset || i === this.startRowIndex) {
       // debugger
       this.startRowIndex = i
       this.containerScroll = result.calculations
@@ -148,7 +152,7 @@ export default {
       firstRowInViewport: 0,
       startRowIndex: 0,
       lastRowInViewport: 0,
-      endRowIndex: this.value.length - 1,
+      endRowIndex: 0,
       // vertical scroll
       horizontalScrollShift: 0,
       containerWidth: 0,
@@ -199,8 +203,8 @@ export default {
   mounted () {
     this.updatedTableSizes()
     const verticalInterval = setInterval(() => {
-      if (this.overflowedContainerHeight > this.renderedElementHeight && this.renderedElementCount <= this.value.length) {
-        this.renderedElementCount += 1
+      if (this.overflowedContainerHeight > this.renderedElementHeight && this.endRowIndex <= this.value.length) {
+        this.endRowIndex += 1
       } else {
         clearInterval(verticalInterval)
       }
@@ -210,7 +214,7 @@ export default {
       let i = 0
       for (const width of this.columnsWidth.values()) {
         summRess += width
-        if (this.containerWidthWithOffset < summRess || this.columnsWidth.size === i + 1) {
+        if (this.containerWidth + this.halfOffset < summRess || this.columnsWidth.size === i + 1) {
           this.renderedColumnsCount = i + 1
           break
         }
@@ -309,36 +313,38 @@ export default {
         }
         clearInterval(this.calcOffsetsInterval)
 
-        // this.calcOffsetsInterval = setInterval(() => {
-        //   let startOffsetFulfilled = true
-        //   let endOffsetFulfilled = true
-        //   if (this.startRowIndex > 0) {
-        //     let result = this.elementScroll
-        //     for (let i = this.firstRowInViewport - 1; i >= this.startRowIndex; i--) {
-        //       result += this.elementSizes.get(i)
-        //     }
-        //     if (result < this.halfOffset) {
-        //       startOffsetFulfilled = false
-        //       this.startRowIndex -= 1
-        //       this.$nextTick(() => {
-        //         this.containerScroll -= this.elementSizes.get(this.startRowIndex)
-        //       })
-        //     }
-        //   }
-        //   if (this.endRowIndex < this.value.length - 1) {
-        //     let result = this.lastElementScroll
-        //     for (let i = this.lastRowInViewport; i <= this.endRowIndex; i++) {
-        //       result += this.elementSizes.get(i)
-        //     }
-        //     if (result < this.halfOffset) {
-        //       startOffsetFulfilled = false
-        //       this.endRowIndex += 1
-        //     }
-        //   }
-        //   if (startOffsetFulfilled && endOffsetFulfilled) {
-        //     clearInterval(this.calcOffsetsInterval)
-        //   }
-        // }, 10)
+        this.calcOffsetsInterval = setInterval(() => {
+          let startOffsetFulfilled = true
+          let endOffsetFulfilled = true
+          if (this.startRowIndex > 0) {
+            let result = this.elementScroll
+            for (let i = this.firstRowInViewport - 1; i >= this.startRowIndex; i--) {
+              result += this.elementSizes.get(i)
+            }
+            if (result < this.halfOffset) {
+              // console.log(this, result, this.halfOffset)
+              // debugger
+              startOffsetFulfilled = false
+              this.startRowIndex -= 1
+              this.$nextTick(() => {
+                this.containerScroll += this.elementSizes.get(this.startRowIndex)
+              })
+            }
+          }
+          if (this.endRowIndex < this.value.length - 1) {
+            let result = this.lastElementScroll
+            for (let i = this.lastRowInViewport; i <= this.endRowIndex; i++) {
+              result += this.elementSizes.get(i)
+            }
+            if (result < this.halfOffset) {
+              startOffsetFulfilled = false
+              this.endRowIndex += 1
+            }
+          }
+          if (startOffsetFulfilled && endOffsetFulfilled) {
+            clearInterval(this.calcOffsetsInterval)
+          }
+        }, 10)
       }
     },
     calcHorizontalScrollState (newValue, prevValue) {
