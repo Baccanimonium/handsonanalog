@@ -65,15 +65,10 @@ export default {
   methods: {
     scrollTo ({ y }) {
       const { bottom, top } = this.$el.getBoundingClientRect()
-      const _b = this.$refs.bar.getBoundingClientRect()
       const nextScrollPosition = (y - top) / (bottom - top)
-      // debugger
-      // console.log(nextScrollPosition, this.scrollPosition)
       if (nextScrollPosition > this.scrollPosition) {
         this.emitScroll({ lastRowIndex: nextScrollPosition })
       } else {
-        // const nextMultiplier = (y - _b.bottom) / (bottom - _b.bottom)
-        // console.log(nextMultiplier)
         this.emitScroll({ firstRowIndex: nextScrollPosition })
       }
     },
