@@ -4,6 +4,7 @@
     @click="scrollTo"
   >
     <div
+      ref="bar"
       class="scroll-rail"
       :style="railStyles"
     />
@@ -25,6 +26,18 @@ export default {
     lastRowInViewport: {
       type: Number,
       required: true
+    },
+    rowHeightSum: {
+      type: Number,
+      required: true
+    },
+    valueContainerHeight: {
+      type: Number,
+      required: true
+    },
+    elementSizes: {
+      type: Map,
+      required: true
     }
   },
   data () {
@@ -34,15 +47,15 @@ export default {
   },
   computed: {
     railHeight () {
-      return (this.containerHeight / this.value.length).toFixed(2)
+      return (this.valueContainerHeight / this.rowHeightSum).toFixed(2) * 100
     },
     scrollPosition () {
       return this.firstRowInViewport / (this.value.length - 1 - this.lastRowInViewport + this.firstRowInViewport)
     },
     railStyles () {
       return {
-        height: `${this.railHeight}px`,
-        top: `calc(${this.scrollPosition * 100}% - ${this.railHeight * this.scrollPosition}px)`
+        height: `${this.railHeight}%`,
+        top: `calc(${this.scrollPosition * 100}% - ${this.railHeight * this.scrollPosition}%)`
       }
     }
   },
@@ -52,10 +65,20 @@ export default {
   methods: {
     scrollTo ({ y }) {
       const { bottom, top } = this.$el.getBoundingClientRect()
+      const _b = this.$refs.bar.getBoundingClientRect()
       const nextScrollPosition = (y - top) / (bottom - top)
-      this.$emit('scrollTo', nextScrollPosition > this.scrollPosition
-        ? { lastRowIndex: nextScrollPosition }
-        : { firstRowIndex: nextScrollPosition })
+      // debugger
+      // console.log(nextScrollPosition, this.scrollPosition)
+      if (nextScrollPosition > this.scrollPosition) {
+        this.emitScroll({ lastRowIndex: nextScrollPosition })
+      } else {
+        // const nextMultiplier = (y - _b.bottom) / (bottom - _b.bottom)
+        // console.log(nextMultiplier)
+        this.emitScroll({ firstRowIndex: nextScrollPosition })
+      }
+    },
+    emitScroll (nextScroll) {
+      this.$emit('scrollTo', nextScroll)
     },
     updateContainerSizes () {
       this.containerHeight = this.$el.clientHeight

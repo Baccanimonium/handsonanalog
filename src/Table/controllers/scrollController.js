@@ -7,45 +7,18 @@ function findElementByScroll (limit, elementMap, defaultSize) {
   return i - 1
 }
 
-const defaultContainer = {
-
-}
-
-const getResultContainer = (initialObject = {}) => ({
-  ...defaultContainer,
-  ...initialObject
-})
-
 const forwardFunctions = {
   calcStartIndex (i, elementHeight, result) {
     if (this.containerScroll > this.halfOffset) {
       if (result.calculations > result.eventScrollValue) {
-        // debugger
-        // if (this.lastRowInViewport === 63) {
-        //   // console.log(result.calculations, result.calculations - result.eventScrollValue)
-        //   debugger
-        // }
-        // if (this.lastRowInViewport === 63) {
-        //   console.log(result.calculations, result.calculations - result.eventScrollValue)
-        //   // debugger
-        // }
         this.startRowIndex = i
         this.elementScroll = elementHeight - (result.calculations - result.eventScrollValue)
-        // console.log(this.elementScroll, elementHeight - this.elementScroll)
-        // console.log(this.containerScroll)
         this.containerScroll += this.elementScroll
         result.calculations = elementHeight
-        // result.nextScroll = this.halfOffset
-        // result.nextScroll = this.halfOffset + this.elementScroll + this.containerScroll - this.halfOffset
-        //
-        // if (this.lastRowInViewport === 63) {
-        //   debugger
-        // }
         result.executor = forwardFunctions.calcFirstRowIndex
         forwardFunctions.calcFirstRowIndex.apply(this, arguments)
       }
     } else {
-      this.startRowIndex = 0
       this.elementScroll = 0
       this.containerScroll += result.eventScrollValue
       result.executor = forwardFunctions.calcFirstRowIndex
@@ -53,46 +26,16 @@ const forwardFunctions = {
     }
   },
   calcFirstRowIndex (i, elementHeight, result) {
-    // if (this.elementScroll > 0) {
-    //   console.log(result.calculations, i, this.containerScroll)
-    // }
     if (result.calculations > this.containerScroll) {
-      // console.log(i, result.calculations, result.nextScroll)
-      // console.log(result.calculations, i)
-      //       if (this.startRowIndex > 0) {
-      // debugger
-      //       }
-      // if (this.lastRowInViewport === 63) {
-      //   debugger
-      //   console.log(result.calculations, result.calculations - result.nextScroll)
-      // }
-      // if (this.startRowIndex > 0) {
-      //   debugger
-      // }
-      // console.log(i, result.calculations, this.containerScroll)
       this.firstRowInViewport = i
-      // console.log(
-      //   result.calculations
-      //   , result.nextScroll + elementHeight - (result.calculations - result.nextScroll))
-      // this.containerScroll = result.nextScroll + elementHeight - (prevValue - result.nextScroll)
-      // console.log(i,result.calculations,this.containerScroll )
       result.calculations -= this.containerScroll
-      // console.log(result.calculations)
-      // console.log(this.startRowIndex, this.firstRowInViewport)
       result.executor = forwardFunctions.calcLastRowIndex
       forwardFunctions.calcLastRowIndex.apply(this, arguments)
     }
   },
   calcLastRowIndex (i, elementHeight, result) {
-    // if (this.lastRowInViewport === 63) {
-    // console.log(result.calculations, this.dataContainerState.height, i)
-    // }
     if (result.calculations >= this.dataContainerState.height) {
-      // console.log(i,result.calculations,this.dataContainerState.height)
-      // console.log(this.lastRowInViewport, i, result.calculations === this.dataContainerState.height)
-      // console.log(i)
       this.lastRowInViewport = i
-      // console.log(result.calculations)
       result.calculations = result.calculations - this.dataContainerState.height
       this.lastElementScroll = result.calculations
       result.executor = forwardFunctions.calcEndScrollState
@@ -104,18 +47,12 @@ const forwardFunctions = {
       this.containerOverScroll = result.calculations
       this.endRowIndex = i
     }
-    // if (this.calculations >= this.halfOffset) {
-    // } else if (elementHeight === undefined) {
-    //   this.endRowIndex = i + 1
-    // }
   }
 }
 
 const backWardFunctions = {
   calcLastRowIndex (i, elementHeight, result) {
     if (result.calculations > result.eventScrollValue) {
-      // console.log(this.lastRowInViewport, i, result.calculations, result.eventScrollValue)
-      // debugger
       this.lastRowInViewport = i
       result.calculations = result.calculations - result.eventScrollValue
       this.lastElementScroll = elementHeight - result.calculations
@@ -125,8 +62,6 @@ const backWardFunctions = {
   },
   calcFirstRowIndex (i, elementHeight, result) {
     if (result.calculations >= this.dataContainerState.height) {
-      // debugger
-      // console.log(this.firstRowInViewport, i)
       this.firstRowInViewport = i
       result.calculations = result.calculations - this.dataContainerState.height
       this.elementScroll = result.calculations
@@ -135,7 +70,6 @@ const backWardFunctions = {
     }
   },
   calcStartIndex (i, elementHeight, result) {
-    // console.log(i, elementHeight,result.calculations, this.halfOffset)
     if (result.calculations > this.halfOffset || i === this.startRowIndex) {
       // debugger
       this.startRowIndex = i
@@ -264,7 +198,19 @@ export default {
       this.elementSizes = new Map(dummyArray)
     },
     scrollToElement ({ lastColumnIndex, firstColumnIndex, lastRowIndex, firstRowIndex }) {
-      //TODO: писать от сюда
+      // TODO: писать от сюда
+      if (lastRowIndex !== undefined) {
+        this.lastElementScroll = 0
+        this.endRowIndex = lastRowIndex
+        this.lastRowInViewport = lastRowIndex
+        this.calcNegativeScroll(0)
+      } else if (firstRowIndex !== undefined) {
+        this.containerScroll = 0
+        this.elementScroll = 0
+        this.startRowIndex = firstRowIndex
+        this.firstRowInViewport = firstRowIndex
+        this.calcPositiveScroll(0)
+      }
     },
     scrollTo ({ lastColumnIndex, firstColumnIndex, lastRowIndex, firstRowIndex }) {
       if (lastColumnIndex) {
@@ -279,135 +225,134 @@ export default {
 
       }
       if (lastRowIndex) {
-        const interpolatedScroll = this.rowHeightSum * lastRowIndex
-        const elementIndex = findElementByScroll(interpolatedScroll, this.elementSizes, this.rowHeightSum / this.value.length)
+        this.scrollToElement({
+          lastRowIndex: findElementByScroll(
+            this.rowHeightSum * lastRowIndex,
+            this.elementSizes,
+            this.rowHeightSum / this.value.length
+          )
+        })
       } else if (firstRowIndex) {
-
+        this.scrollToElement({
+          firstRowIndex: findElementByScroll(
+            this.rowHeightSum * firstRowIndex,
+            this.elementSizes,
+            this.rowHeightSum / this.value.length
+          )
+        })
       }
+    },
+    calcPositiveScroll (newValue) {
+      const result = {
+        eventScrollValue: Math.abs(newValue),
+        calculations: -this.elementScroll,
+        executor: forwardFunctions.calcStartIndex
+      }
+      // result.executor = function (i, elementHeight) {
+      //   if (this.startRowIndex === undefined) {
+      //     if (this.currentContainerScroll > this.halfOffset) {
+      //       if (this.calculations > newValue) {
+      //         this.startRowIndex = i
+      //         this.nextElementScroll = elementHeight - (this.calculations - newValue)
+      //         this.calculations = elementHeight
+      //         this.viewStartViewPortOffset = this.currentContainerScroll + this.nextElementScroll
+      //         //
+      //         this.executor(i, elementHeight)
+      //       }
+      //     } else {
+      //       this.startRowIndex = 0
+      //       this.nextElementScroll = 0
+      //       this.viewStartViewPortOffset = this.nextScroll
+      //       this.executor(i, elementHeight)
+      //     }
+      //   } else if (!this.firstRowInViewport) {
+      //     if (this.calculations > this.viewStartViewPortOffset) {
+      //       this.firstRowInViewport = i
+      //       this.nextContainerScroll = this.viewStartViewPortOffset + elementHeight - (this.calculations - this.viewStartViewPortOffset) - this.nextElementScroll
+      //       this.calculations = this.calculations - this.viewStartViewPortOffset
+      //       this.executor(i, 0)
+      //     }
+      //   } else if (!this.lastRowInViewport) {
+      //     if (this.calculations >= this.viewPortHeight) {
+      //       this.lastRowInViewport = i
+      //       this.calculations = this.calculations - this.viewPortHeight
+      //       this.lastElementScroll = this.calculations
+      //       //
+      //       this.executor(i, 0)
+      //     }
+      //   } else if (!this.endRowIndex) {
+      //     if (this.calculations >= this.halfOffset) {
+      //       this.endRowIndex = i
+      //     } else if (elementHeight === undefined) {
+      //       this.endRowIndex = i + 1
+      //     }
+      //   }
+      // }
+      let i = this.startRowIndex
+      for (i; i <= this.endRowIndex; i++) {
+        const elementHeight = this.elementSizes.get(i)
+        result.calculations += elementHeight
+        result.executor.apply(this, [i, elementHeight, result])
+      }
+      this.reCalcOffsets()
+    },
+    calcNegativeScroll (newValue) {
+      const result = {
+        eventScrollValue: Math.abs(newValue),
+        calculations: -this.lastElementScroll,
+        executor: backWardFunctions.calcLastRowIndex
+      }
+      let i = this.lastRowInViewport
+      for (i; i >= this.startRowIndex; i--) {
+        const elementHeight = this.elementSizes.get(i)
+        result.calculations += elementHeight
+        result.executor.apply(this, [i, elementHeight, result])
+      }
+      this.reCalcOffsets()
+    },
+    reCalcOffsets () {
+      clearInterval(this.calcOffsetsInterval)
+      this.calcOffsetsInterval = setInterval(() => {
+        let startOffsetFulfilled = true
+        let endOffsetFulfilled = true
+        if (this.startRowIndex > 0) {
+          let result = this.elementScroll
+          for (let i = this.firstRowInViewport - 1; i >= this.startRowIndex; i--) {
+            result += this.elementSizes.get(i)
+          }
+          if (result < this.halfOffset) {
+            startOffsetFulfilled = false
+            this.startRowIndex -= 1
+            this.$nextTick(() => {
+              this.containerScroll += this.elementSizes.get(this.startRowIndex)
+            })
+          }
+        }
+        if (this.endRowIndex < this.value.length - 1) {
+          let result = this.lastElementScroll
+          for (let i = this.lastRowInViewport; i <= this.endRowIndex; i++) {
+            result += this.elementSizes.get(i)
+          }
+          if (result < this.halfOffset) {
+            startOffsetFulfilled = false
+            this.endRowIndex += 1
+          }
+        }
+        if (startOffsetFulfilled && endOffsetFulfilled) {
+          clearInterval(this.calcOffsetsInterval)
+        }
+      }, 10)
     },
     calcPosition (newValue) {
       // console.log(newValue)
       if (newValue !== 0) {
-        const result = {
-          eventScrollValue: Math.abs(newValue),
-          calculations: -this.elementScroll,
-          nextElementScroll: undefined,
-          nextScroll: this.containerScroll + newValue,
-          currentContainerScroll: this.containerScroll,
-          viewStartViewPortOffset: 0,
-          nextContainerScroll: undefined,
-          lastElementScroll: undefined,
-          containerScroll: this.containerScroll,
-          halfOffset: this.halfOffset,
-          viewPortHeight: this.dataContainerState.height,
-          containerWithOffset: this.overflowedContainerHeight,
-          startRowIndex: undefined,
-          firstRowInViewport: undefined,
-          lastRowInViewport: undefined,
-          endRowIndex: undefined,
-          executor: undefined
-        }
-
         if (newValue > 0) {
-          // result.executor = function (i, elementHeight) {
-          //   if (this.startRowIndex === undefined) {
-          //     if (this.currentContainerScroll > this.halfOffset) {
-          //       if (this.calculations > newValue) {
-          //         this.startRowIndex = i
-          //         this.nextElementScroll = elementHeight - (this.calculations - newValue)
-          //         this.calculations = elementHeight
-          //         this.viewStartViewPortOffset = this.currentContainerScroll + this.nextElementScroll
-          //         //
-          //         this.executor(i, elementHeight)
-          //       }
-          //     } else {
-          //       this.startRowIndex = 0
-          //       this.nextElementScroll = 0
-          //       this.viewStartViewPortOffset = this.nextScroll
-          //       this.executor(i, elementHeight)
-          //     }
-          //   } else if (!this.firstRowInViewport) {
-          //     if (this.calculations > this.viewStartViewPortOffset) {
-          //       this.firstRowInViewport = i
-          //       this.nextContainerScroll = this.viewStartViewPortOffset + elementHeight - (this.calculations - this.viewStartViewPortOffset) - this.nextElementScroll
-          //       this.calculations = this.calculations - this.viewStartViewPortOffset
-          //       this.executor(i, 0)
-          //     }
-          //   } else if (!this.lastRowInViewport) {
-          //     if (this.calculations >= this.viewPortHeight) {
-          //       this.lastRowInViewport = i
-          //       this.calculations = this.calculations - this.viewPortHeight
-          //       this.lastElementScroll = this.calculations
-          //       //
-          //       this.executor(i, 0)
-          //     }
-          //   } else if (!this.endRowIndex) {
-          //     if (this.calculations >= this.halfOffset) {
-          //       this.endRowIndex = i
-          //     } else if (elementHeight === undefined) {
-          //       this.endRowIndex = i + 1
-          //     }
-          //   }
-          // }
-          result.executor = forwardFunctions.calcStartIndex
-          let i = this.startRowIndex
-          for (i; i <= this.endRowIndex; i++) {
-            const elementHeight = this.elementSizes.get(i)
-            result.calculations += elementHeight
-            result.executor.apply(this, [i, elementHeight, result])
-          }
-          // this.startRowIndex = result.startRowIndex !== undefined ? result.startRowIndex : this.startRowIndex
-          // this.firstRowInViewport = result.firstRowInViewport !== undefined ? result.firstRowInViewport : 0
-          // this.lastRowInViewport = result.lastRowInViewport
-          // this.endRowIndex = result.endRowIndex !== undefined ? result.endRowIndex : this.value.length - 1
-          // this.elementScroll = result.nextElementScroll
-          // this.lastElementScroll = result.lastElementScroll
-          // this.containerScroll = result.nextContainerScroll
+          this.calcPositiveScroll(newValue)
         } else {
-          result.executor = backWardFunctions.calcLastRowIndex
-          result.calculations = -this.lastElementScroll
-          let i = this.lastRowInViewport
-          for (i; i >= this.startRowIndex; i--) {
-            const elementHeight = this.elementSizes.get(i)
-            result.calculations += elementHeight
-            result.executor.apply(this, [i, elementHeight, result])
-          }
+          this.calcNegativeScroll(newValue)
         }
-        clearInterval(this.calcOffsetsInterval)
-
-        this.calcOffsetsInterval = setInterval(() => {
-          let startOffsetFulfilled = true
-          let endOffsetFulfilled = true
-          if (this.startRowIndex > 0) {
-            let result = this.elementScroll
-            for (let i = this.firstRowInViewport - 1; i >= this.startRowIndex; i--) {
-              result += this.elementSizes.get(i)
-            }
-            if (result < this.halfOffset) {
-              // console.log(this, result, this.halfOffset)
-              // debugger
-              startOffsetFulfilled = false
-              this.startRowIndex -= 1
-              this.$nextTick(() => {
-                this.containerScroll += this.elementSizes.get(this.startRowIndex)
-              })
-            }
-          }
-          if (this.endRowIndex < this.value.length - 1) {
-            let result = this.lastElementScroll
-            for (let i = this.lastRowInViewport; i <= this.endRowIndex; i++) {
-              result += this.elementSizes.get(i)
-            }
-            if (result < this.halfOffset) {
-              startOffsetFulfilled = false
-              this.endRowIndex += 1
-            }
-          }
-          if (startOffsetFulfilled && endOffsetFulfilled) {
-            clearInterval(this.calcOffsetsInterval)
-          }
-        }, 10)
       }
+      // console.log(this.startRowIndex, this.firstRowInViewport, this.lastRowInViewport, this.containerScroll, this.elementScroll)
     },
     calcHorizontalScrollState (newValue, prevValue) {
       if (newValue !== 0) {

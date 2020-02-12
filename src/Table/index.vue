@@ -293,6 +293,9 @@ export default {
           {this.isOverflowed && (
             <Scroll
               value={this.value}
+              elementSizes={this.elementSizes}
+              rowHeightSum={this.rowHeightSum}
+              valueContainerHeight={this.dataContainerState.height}
               lastRowInViewport={this.lastRowInViewport}
               firstRowInViewport={this.firstRowInViewport}
               onScrollTo={this.scrollTo}
