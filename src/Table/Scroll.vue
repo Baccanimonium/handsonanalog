@@ -1,12 +1,13 @@
 <template>
   <div
     class="table-scroll"
-    @click="scrollTo"
+    @mousedown="scrollTo"
   >
     <div
       ref="bar"
       class="scroll-rail"
       :style="railStyles"
+      @mousedown.stop.prevent=""
     />
   </div>
 </template>

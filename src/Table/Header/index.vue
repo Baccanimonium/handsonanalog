@@ -58,7 +58,6 @@ export default {
           lastElementInViewPort = i + 1
         }
       }
-      // this.$emit('renderedColumnsCount', i, lastElementInViewPort)
     }
   },
   render (h) {

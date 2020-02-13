@@ -25,16 +25,16 @@ export default {
       },
       meta: [],
       columns: [
-        { source: 'id', label: 'ID', inputComponent: 'input' },
-        { source: 'name.first', label: 'FirstName', inputComponent: 'datePicker' },
-        { source: 'name.last', label: 'SecondName', inputComponent: 'select' },
-        { source: 'address', label: 'Адресс', inputComponent: 'input' },
+        { source: 'id', label: '0', inputComponent: 'input' },
+        { source: 'name.first', label: '1', inputComponent: 'datePicker' },
+        { source: 'name.last', label: '2', inputComponent: 'select' },
+        { source: 'address', label: '3', inputComponent: 'input' },
         ...(() => {
           const res = []
           for (let j = 0; j < 20; j++) {
             res[j] = {}
             res[j].source = `${j}`
-            res[j].label = `${j}`
+            res[j].label = `${j + 4}`
             res[j].inputComponent = 'input'
           }
           return res
@@ -58,7 +58,7 @@ export default {
         return res
       })()
     }
-  },
+  }
 }
 </script>
 

@@ -49,7 +49,7 @@ export default {
       return { ...defaultSettings, ...this.settings }
     },
     slicedColumns () {
-      return this.columns.slice(this.startColumnIndex, this.renderedColumnsCount)
+      return this.columns.slice(this.startColumnIndex, this.lastColumnIndex + 1)
     },
     gridStyles () {
       return { gridTemplateColumns: `repeat(${this.columns.length}, 150px)` }
@@ -239,7 +239,7 @@ export default {
   render (h) {
     const {
       normalizedData, startColumnIndex, columns, rowStyles, $refs: { scrollContainer }, offsets, slicedColumns,
-      elementSizes
+      elementSizes, columnWidthSum
     } = this
     return (
       <div class="grid-container">
@@ -283,6 +283,7 @@ export default {
             {this.isXOverflowed && (
               <VerticalScroll
                 columns={columns}
+                columnWidthSum={columnWidthSum}
                 firstColumnInViewport={this.firstColumnInViewport}
                 lastColumnInViewport={this.lastColumnInViewport}
                 onScrollTo={this.scrollTo}

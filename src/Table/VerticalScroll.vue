@@ -1,11 +1,12 @@
 <template>
   <div
     class="table-horizontal-scroll"
-    @click="scrollTo"
+    @mousedown="scrollTo"
   >
     <div
       class="scroll-rail"
       :style="railStyles"
+      @mousedown.stop.prevent=""
     />
   </div>
 </template>
@@ -22,6 +23,10 @@ export default {
       type: Number,
       required: true
     },
+    columnWidthSum: {
+      type: Number,
+      required: true
+    },
     lastColumnInViewport: {
       type: Number,
       required: true
@@ -34,24 +39,15 @@ export default {
   },
   computed: {
     railWidth () {
-      const result = (this.containerWidth / this.columns.length).toFixed(2)
-      return result < 10 ? 10 : result
+      return (this.containerWidth / this.columnWidthSum).toFixed(2) * 100
     },
     scrollPosition () {
       return this.firstColumnInViewport / (this.columns.length - 1 - this.lastColumnInViewport + this.firstColumnInViewport)
     },
     railStyles () {
-      // console.log(scrollPosition, this.firstColumnInViewport, this.lastColumnInViewport, -this.lastColumnInViewport + this.firstColumnInViewport)
-      // console.log(
-      //   scrollPosition,
-      //   this.firstColumnInViewport,
-      //   this.columns[this.firstColumnInViewport].label,
-      //   this.lastColumnInViewport,
-      //
-      // ) this.columns[this.lastColumnInViewport] && this.columns[this.lastColumnInViewport].label,
       return {
-        width: `${this.railWidth}px`,
-        left: `calc(${this.scrollPosition * 100}% - ${this.railWidth * this.scrollPosition}px)`
+        width: `${this.railWidth}%`,
+        left: `calc(${this.scrollPosition * 100}% - ${this.railWidth * this.scrollPosition}%)`
       }
     }
   },
