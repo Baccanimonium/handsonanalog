@@ -350,7 +350,6 @@ export default {
           }
           return { startColumnIndex: i, horizontalContainerScroll: result }
         })()
-        console.log(startColumnIndex, horizontalContainerScroll)
         this.firstColumnScroll = 0
         this.horizontalContainerScroll = horizontalContainerScroll
         this.startColumnIndex = startColumnIndex

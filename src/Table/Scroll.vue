@@ -1,20 +1,24 @@
 <template>
   <div
+    ref="railContainer"
     class="table-scroll"
     @mousedown="scrollTo"
   >
     <div
-      ref="bar"
+      ref="rail"
       class="scroll-rail"
       :style="railStyles"
-      @mousedown.stop.prevent=""
+      @mousedown.stop.prevent="initDragging"
     />
   </div>
 </template>
 
 <script>
+import withDragging from './controllers/withDragging'
+
 export default {
   name: 'Scroll',
+  mixins: [withDragging('railContainer', 'y', 'handleDragRail')],
   props: {
     value: {
       type: Array,
@@ -67,17 +71,30 @@ export default {
     scrollTo ({ y }) {
       const { bottom, top } = this.$el.getBoundingClientRect()
       const nextScrollPosition = (y - top) / (bottom - top)
-      if (nextScrollPosition > this.scrollPosition) {
-        this.emitScroll({ lastRowIndex: nextScrollPosition })
-      } else {
-        this.emitScroll({ firstRowIndex: nextScrollPosition })
-      }
+      this.emitScroll(nextScrollPosition > this.scrollPosition
+        ? { lastRowIndex: nextScrollPosition }
+        : { firstRowIndex: nextScrollPosition })
     },
     emitScroll (nextScroll) {
       this.$emit('scrollTo', nextScroll)
     },
     updateContainerSizes () {
       this.containerHeight = this.$el.clientHeight
+    },
+    handleDragRail (calculatedPercent, x) {
+      const { railHeight, $refs: { rail } } = this
+      const { top, bottom } = rail.getBoundingClientRect()
+      const halfRailHeight = railHeight / 2
+
+      this.$emit('scrollTo', (() => {
+        if (bottom - top < x) {
+          const nextScroll = calculatedPercent + halfRailHeight
+          return { lastRowIndex: (nextScroll < 100 ? nextScroll : 100) / 100 }
+        } else {
+          const nextScroll = calculatedPercent - halfRailHeight
+          return { firstRowIndex: nextScroll > 0 ? nextScroll / 100 : 0 }
+        }
+      })())
     }
   },
 }

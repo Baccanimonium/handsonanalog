@@ -1,19 +1,23 @@
 <template>
   <div
+    ref="railContainer"
     class="table-horizontal-scroll"
     @mousedown="scrollTo"
   >
     <div
+      ref="rail"
       class="scroll-rail"
       :style="railStyles"
-      @mousedown.stop.prevent=""
+      @mousedown.stop.prevent="initDragging"
     />
   </div>
 </template>
 
 <script>
+import withDragging from './controllers/withDragging'
 export default {
   name: 'VerticalScroll',
+  mixins: [withDragging('railContainer', 'x', 'handleDragRail')],
   props: {
     columns: {
       type: Array,
@@ -64,6 +68,21 @@ export default {
     },
     updateContainerSizes () {
       this.containerWidth = this.$el.clientWidth
+    },
+    handleDragRail (calculatedPercent, x) {
+      const { railWidth, $refs: { rail } } = this
+      const { left, right } = rail.getBoundingClientRect()
+      const halfRailWidth = railWidth / 2
+
+      this.$emit('scrollTo', (() => {
+        if (right - left < x) {
+          const nextScroll = calculatedPercent + halfRailWidth
+          return { lastColumnIndex: (nextScroll < 100 ? nextScroll : 100) / 100 }
+        } else {
+          const nextScroll = calculatedPercent - halfRailWidth
+          return { firstColumnIndex: nextScroll > 0 ? nextScroll / 100 : 0 }
+        }
+      })())
     }
   },
 }
